@@ -27,6 +27,8 @@ Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-
 
 ![](https://user-images.githubusercontent.com/9499881/52437030-42760980-2b2f-11e9-8ce5-14b45b30ca31.png)
 
+![](https://user-images.githubusercontent.com/9499881/52437903-78b48880-2b31-11e9-81ac-7b639286db70.png)
+
 
 Flash calibration sketch, put on a flat surface, get the data for calibration. Insert calibration data into the main sketch.
 
