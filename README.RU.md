@@ -3,8 +3,8 @@
 # X360Advance (XInput) 
 Внешний Arduino гироскоп для Xbox геймпада, который позволяет использовать его как руль, а также помогать более точно прицеливаться.
 
-![](https://user-images.githubusercontent.com/9499881/52436336-77815c80-2b2d-11e9-8d56-4ff82d82f48c.gif)
-![](https://user-images.githubusercontent.com/9499881/52436371-91bb3a80-2b2d-11e9-8bd1-3399e4026962.gif)
+[![YouTube-X360Advance](https://user-images.githubusercontent.com/9499881/52436336-77815c80-2b2d-11e9-8d56-4ff82d82f48c.gif)](https://youtu.be/lNH2shRDchw)
+[![YouTube-X360Advance](https://user-images.githubusercontent.com/9499881/52436371-91bb3a80-2b2d-11e9-8bd1-3399e4026962.gif)](https://youtu.be/lNH2shRDchw)
 
 
 Есть 3 режима использования:
