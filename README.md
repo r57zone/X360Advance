@@ -1,7 +1,7 @@
 [![EN](https://user-images.githubusercontent.com/9499881/33184537-7be87e86-d096-11e7-89bb-f3286f752bc6.png)](https://github.com/r57zone/X360Advance-Arduino/blob/master/README.md) 
 [![RU](https://user-images.githubusercontent.com/9499881/27683795-5b0fbac6-5cd8-11e7-929c-057833e01fb1.png)](https://github.com/r57zone/X360Advance-Arduino/blob/master/README.RU.md)
 # X360Advance (XInput) 
-External Arduino Gyroscope for the Xbox gamepad that allows to use it as a steering wheel, and also help more accurately aim. There is also a [version for OpenTrack](https://github.com/r57zone/X360Advance).
+External Arduino Gyroscope for the Xbox gamepad that allows to use it as a steering wheel, and also help more accurately aim.
 
 ![](https://user-images.githubusercontent.com/9499881/52436336-77815c80-2b2d-11e9-8d56-4ff82d82f48c.gif)
 ![](https://user-images.githubusercontent.com/9499881/52436371-91bb3a80-2b2d-11e9-8bd1-3399e4026962.gif)
@@ -15,6 +15,8 @@ There are 3 modes of use:
 
 The centering of the axes occurs when you press the steering wheel button or FPS.
 
+
+If you have problems, for example, random rotation, you can try to flush the Arduino port com buffer, for this you need to press the buttons: left bumper, right bumper, back and start.
 ## Setup
 Change the COM port number in the file "X360Advance.ini", the sensitivity of the steering wheel and the rotation of the camera if necessary.
 
@@ -23,7 +25,7 @@ Next you need to copy the files "xinput1_3.dll" (for 32 bit games and for 64 bit
 Perhaps for some games you will have to rename "xinput1_3.dll" to one of the names: "xinput1_4.dll" (Windows 8 / metro apps only), "xinput1_2.dll", "xinput1_1.dll" or "xinput9_1_0.dll
 
 ## Arduino
-Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-521](http://ali.pub/2oy76c) and [3 buttons](http://ali.pub/33lzue). Solder the scheme. Attach to the back of the case, for example, with rubber bands.
+Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-521](http://ali.pub/2oy76c), [3 buttons](http://ali.pub/33lzue), [tape Velcro](http://ali.pub/33pbqa) and cable 2m miniUSB or microUSB (depending on the arduino). Solder the scheme. Attach to the back of the case, for example, with rubber bands.
 
 ![](https://user-images.githubusercontent.com/9499881/52437030-42760980-2b2f-11e9-8ce5-14b45b30ca31.png)
 

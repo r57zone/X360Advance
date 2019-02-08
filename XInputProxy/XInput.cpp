@@ -38,8 +38,8 @@
 typedef struct _XINPUT_GAMEPAD
 {
 	WORD                                wButtons;
-	BYTE                                bRightTrigger;
 	BYTE                                bLeftTrigger;
+	BYTE                                bRightTrigger;
 	SHORT                               sThumbLX;
 	SHORT                               sThumbLY;
 	SHORT                               sThumbRX;
@@ -247,7 +247,7 @@ int MouseGetDelta(int val, int prev) //Implementation from OpenTrack https://git
 void MousePose(const double axisX, const double axisY) //Implementation from OpenTrack https://github.com/opentrack/opentrack/blob/unstable/proto-mouse/
 {
 	int mouse_x = 0, mouse_y = 0;
-
+	
 	mouse_x = round(axisX * SensX * 2);
 	mouse_y = round(axisY * SensY * 2);
 
@@ -279,8 +279,8 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 	}
 
 	pState->Gamepad.wButtons = 0;
-	pState->Gamepad.bRightTrigger = 0;
 	pState->Gamepad.bLeftTrigger = 0;
+	pState->Gamepad.bRightTrigger = 0;
 	pState->Gamepad.sThumbLX = 0;
 	pState->Gamepad.sThumbLY = 0;
 	pState->Gamepad.sThumbRX = 0;
@@ -291,8 +291,8 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 		myStatus = MyXInputGetState(dwUserIndex, &myPState);
 
 	if (myStatus == ERROR_SUCCESS) {
-		pState->Gamepad.bRightTrigger = myPState.Gamepad.bRightTrigger;
 		pState->Gamepad.bLeftTrigger = myPState.Gamepad.bLeftTrigger;
+		pState->Gamepad.bRightTrigger = myPState.Gamepad.bRightTrigger;
 		pState->Gamepad.wButtons = myPState.Gamepad.wButtons;
 
 		//FPS
@@ -332,6 +332,14 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 			pState->Gamepad.wButtons = 0;
 		}*/
 
+		if ((myPState.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
+			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_START)) {
+			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
+			pState->Gamepad.wButtons = 0;
+		}
+
 		pState->Gamepad.sThumbLX = myPState.Gamepad.sThumbLX;
 		pState->Gamepad.sThumbLY = myPState.Gamepad.sThumbLY;
 		pState->Gamepad.sThumbRX = myPState.Gamepad.sThumbRX;
@@ -351,7 +359,7 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 			//pState->Gamepad.sThumbLY = myPState.Gamepad.sThumbLY;
 			//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[3], YRPOffset[2]) * RThumbSensX);
 			//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[2], YRPOffset[1]) * RThumbSensY);
-			
+			//FPS
 			MousePose(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
 		}
 		break;
