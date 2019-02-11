@@ -95,9 +95,10 @@ bool ArduinoInit = false, ArduinoWork = false;
 std::thread *pArduinothread = NULL;
 HANDLE hSerial;
 float ArduinoData[4] = { 0, 0, 0, 0 }; //Mode, Yaw, Pitch, Roll
+float LastArduinoData[4] = { 0, 0, 0, 0 };
 float YRPOffset[3] = { 0, 0, 0 };
 BYTE GameMode = 0;
-double WheelAngle, SensX, SensY;
+double WheelAngle, SensX, SensY;//, TriggerSens;
 int last_x = 0, last_y = 0;
 
 void Centering()
@@ -107,12 +108,46 @@ void Centering()
 	YRPOffset[2] = ArduinoData[3];
 }
 
+bool CorrectAngleValue(float Value)
+{
+	if (Value > -180 && Value < 180)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void ArduinoRead()
 {
 	DWORD bytesRead;
 
 	while (ArduinoWork) {
 		ReadFile(hSerial, &ArduinoData, sizeof(ArduinoData), &bytesRead, 0);
+
+		//Filter incorrect values
+		if (CorrectAngleValue(ArduinoData[1]) == false || CorrectAngleValue(ArduinoData[2]) == false || CorrectAngleValue(ArduinoData[3]) == false)
+		{
+			//Last correct values
+			ArduinoData[0] = LastArduinoData[0];
+			ArduinoData[1] = LastArduinoData[1];
+			ArduinoData[2] = LastArduinoData[2];
+			ArduinoData[3] = LastArduinoData[3];
+
+			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
+		}
+
+		//Save last correct values
+		if (CorrectAngleValue(ArduinoData[1]) && CorrectAngleValue(ArduinoData[2]) && CorrectAngleValue(ArduinoData[3]))
+		{
+			LastArduinoData[0] = ArduinoData[0];
+			LastArduinoData[1] = ArduinoData[1];
+			LastArduinoData[2] = ArduinoData[2];
+			LastArduinoData[3] = ArduinoData[3];
+		}
+
 		if (ArduinoData[0] == 1) { GameMode = 0; }
 		if (ArduinoData[0] == 2)
 		{ 
@@ -130,9 +165,10 @@ void ArduinoRead()
 
 void ArduinoStart() {
 	CIniReader IniFile("X360Advance.ini");
-	WheelAngle = IniFile.ReadFloat("Main", "WheelAngle", 80);
+	WheelAngle = IniFile.ReadFloat("Main", "WheelAngle", 75);
 	SensX = IniFile.ReadFloat("Main", "SensX", 4.5);
 	SensY = IniFile.ReadFloat("Main", "SensY", 3.5);
+	//TriggerSens = IniFile.ReadFloat("Main", "TriggerSens", 0.5);
 
 	TCHAR XInputPath[MAX_PATH] = { 0 };
 	GetSystemWindowsDirectory(XInputPath, sizeof(XInputPath));
@@ -178,20 +214,20 @@ void ArduinoStart() {
 	}
 }
 
-SHORT ToLeftStick(double Data)
+SHORT ToLeftStick(double Value)
 {
-	int MyData = round((32767 / WheelAngle) * Data);
-	if (MyData < -32767) MyData = -32767;
-	if (MyData > 32767) MyData = 32767;
-	return MyData;
+	int MyValue = round((32767 / WheelAngle) * Value);
+	if (MyValue < -32767) MyValue = -32767;
+	if (MyValue > 32767) MyValue = 32767;
+	return MyValue;
 }
 
-/*SHORT ThumbFix(double Data)
+/*SHORT ThumbFix(double Value)
 {
-	int MyData = round(Data);
-	if (MyData > 32767) MyData = 32767;
-	if (MyData < -32767) MyData = -32767;
-	return MyData;
+	int MyValue = round(Value);
+	if (MyValue > 32767) MyValue = 32767;
+	if (MyValue < -32767) MyValue = -32767;
+	return MyValue;
 }*/
 
 DLLEXPORT BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
@@ -244,7 +280,7 @@ int MouseGetDelta(int val, int prev) //Implementation from OpenTrack https://git
 		return val - prev;
 }
 
-void MousePose(const double axisX, const double axisY) //Implementation from OpenTrack https://github.com/opentrack/opentrack/blob/unstable/proto-mouse/
+void MouseMove(const double axisX, const double axisY) //Implementation from OpenTrack https://github.com/opentrack/opentrack/blob/unstable/proto-mouse/
 {
 	int mouse_x = 0, mouse_y = 0;
 	
@@ -295,12 +331,17 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 		pState->Gamepad.bRightTrigger = myPState.Gamepad.bRightTrigger;
 		pState->Gamepad.wButtons = myPState.Gamepad.wButtons;
 
+		pState->Gamepad.sThumbLX = myPState.Gamepad.sThumbLX;
+		pState->Gamepad.sThumbLY = myPState.Gamepad.sThumbLY;
+		pState->Gamepad.sThumbRX = myPState.Gamepad.sThumbRX;
+		pState->Gamepad.sThumbRY = myPState.Gamepad.sThumbRY;
+
 		//FPS
 		/*if ((myPState.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
 			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
 			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)) {
 			GameMode = 1;
-			pState->Gamepad.wButtons = 0; //Не нужно нажимать кнопки в игре при смене режима
+			pState->Gamepad.wButtons = 0; //Не нажимать кнопки при смене режима
 		}
 
 		//Wheel
@@ -330,40 +371,53 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 			YRPOffset[2] = ArduinoYPR[2];
 
 			pState->Gamepad.wButtons = 0;
-		}*/
-
-		if ((myPState.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
-			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
-			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
-			&& (myPState.Gamepad.wButtons & XINPUT_GAMEPAD_START)) {
-			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
-			pState->Gamepad.wButtons = 0;
 		}
 
-		pState->Gamepad.sThumbLX = myPState.Gamepad.sThumbLX;
-		pState->Gamepad.sThumbLY = myPState.Gamepad.sThumbLY;
-		pState->Gamepad.sThumbRX = myPState.Gamepad.sThumbRX;
-		pState->Gamepad.sThumbRY = myPState.Gamepad.sThumbRY;
+		if (GetAsyncKeyState(VK_NUMPAD1) & 0x8000)
+		{
+			GameMode = 0;
+		}
+
+		if (GetAsyncKeyState(VK_NUMPAD2) & 0x8000)
+		{
+			GameMode = 1;
+			Centering();
+		}
+
+		if (GetAsyncKeyState(VK_NUMPAD3) & 0x8000)
+		{
+			GameMode = 2;
+			Centering();
+		}*/
 
 		switch (GameMode)
 		{
-		case 1: //Wheel
-		{
-			pState->Gamepad.sThumbLX = ToLeftStick(OffsetYPR(ArduinoData[1], YRPOffset[0])) * -1;
-		}
-		break;
-
-		case 2:	//FPS
-		{
-			//pState->Gamepad.sThumbLX = myPState.Gamepad.sThumbLX;
-			//pState->Gamepad.sThumbLY = myPState.Gamepad.sThumbLY;
-			//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[3], YRPOffset[2]) * RThumbSensX);
-			//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[2], YRPOffset[1]) * RThumbSensY);
-			//FPS
-			MousePose(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
-		}
-		break;
+			case 1: //Wheel
+			{
+				pState->Gamepad.sThumbLX = ToLeftStick(OffsetYPR(ArduinoData[1], YRPOffset[0])) * -1;
+				break;
+			}
 		
+
+			case 2:	//FPS
+			{
+				//Fully emulation
+				//pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
+				//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
+			
+				//Gyroscope offset
+				//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750); 32767 / 180
+				//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
+
+				/*if (pState->Gamepad.bLeftTrigger == 0) {
+					MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
+				} else {
+					MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1 * TriggerSens, OffsetYPR(ArduinoData[3], YRPOffset[2]) * TriggerSens);
+				}*/
+
+				MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
+				break;
+			}
 		}
 	}
 
