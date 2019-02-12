@@ -22,7 +22,7 @@
 Возможно, для некоторых игр придется переименовать "xinput1_3.dll" в одно из названий: "xinput1_4.dll" (Windows 8 / metro apps only), "xinput1_2.dll", "xinput1_1.dll" или "xinput9_1_0.dll".
 
 ## Arduino
-Необходимо купить [Arduino Nano](http://ali.pub/2oy73f), датчик вращения [MPU 6050 GY-521](http://ali.pub/2oy76c), [3 кнопки](http://ali.pub/33lzue), [ленту липучку](http://ali.pub/33pbqa) и кабель 2 м. miniUSB или microUSB (в зависимости от Arduino). Спаять по схеме. Закрепить на задней части корпуса, например, резинками.
+Необходимо купить [Arduino Nano](http://ali.pub/2oy73f), датчик вращения [MPU 6050 GY-521](http://ali.pub/2oy76c), [3 кнопки](http://ali.pub/33lzue), [плату для прототипирования](http://ali.pub/340eo5), [кабель 2 м. miniUSB](http://ali.pub/340epp) или [microUSB](http://ali.pub/340eqa) (в зависимости от Arduino) и [ленту липучку](http://ali.pub/33pbqa). Спаять по схеме. Закрепить на задней части корпуса, например, резинками.
 
 ![](https://user-images.githubusercontent.com/9499881/52437030-42760980-2b2f-11e9-8ce5-14b45b30ca31.png)
 
