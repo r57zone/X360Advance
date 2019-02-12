@@ -14,9 +14,6 @@ There are 3 modes of use:
 3. FPS - mouse movement by tilting the gyro (button 3 - digital pin 3)
 
 The centering of the axes occurs when you press the steering wheel button or FPS.
-
-
-If you have problems, for example, random rotation, you can try to flush the Arduino port com buffer, for this you need to press the buttons: left bumper, right bumper, back and start.
 ## Setup
 Change the COM port number in the file "X360Advance.ini", the sensitivity of the steering wheel and the rotation of the camera if necessary.
 
