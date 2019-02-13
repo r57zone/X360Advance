@@ -17,7 +17,7 @@ The centering of the axes occurs when you press the steering wheel button or FPS
 ## Setup
 Change the COM port number in the file "X360Advance.ini", the sensitivity of the steering wheel and the rotation of the camera if necessary.
 
-Next you need to copy the files "xinput1_3.dll" (for 32 bit games and for 64 bit copy "xinput1_3x64.dll" and rename to "xinput1_3.dll") and "X360Advance" in the game folder and run the game.
+Next you need to copy the files "xinput1_3.dll" (for 32 bit games and for 64 bit copy "xinput1_3x64.dll" and rename to "xinput1_3.dll") and "X360Advance.ini" to the game folder and run the game.
 
 Perhaps for some games you will have to rename "xinput1_3.dll" to one of the names: "xinput1_4.dll" (Windows 8 / metro apps only), "xinput1_2.dll", "xinput1_1.dll" or "xinput9_1_0.dll
 
