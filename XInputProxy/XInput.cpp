@@ -152,13 +152,16 @@ void ArduinoRead()
 		if (ArduinoData[0] == 2)
 		{ 
 			GameMode = 1;
+			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 			Centering();
 		}
 		if (ArduinoData[0] == 4)
 		{
 			GameMode = 2;
+			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 			Centering();
 		}
+
 
 	}
 }
@@ -406,8 +409,8 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 				//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
 			
 				//Gyroscope offset
-				//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750); 32767 / 180
-				//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
+				//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[1], YRPOffset[0]) * -182 * StickSensX); //StickSensX - 9
+				//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[3], YRPOffset[2]) * -182 * StickSensY); //StickSensX - 7
 
 				/*if (pState->Gamepad.bLeftTrigger == 0) {
 					MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
