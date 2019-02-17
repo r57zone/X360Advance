@@ -21,6 +21,7 @@ Next you need to copy the files "xinput1_3.dll" (for 32 bit games and for 64 bit
 
 Perhaps for some games you will have to rename "xinput1_3.dll" to one of the names: "xinput1_4.dll" (Windows 8 / metro apps only), "xinput1_2.dll", "xinput1_1.dll" or "xinput9_1_0.dll
 
+For games in which for some reason the xinput library did not work, you can use the application "X360AdvanceApp", which helps in aiming.
 ## Arduino
 Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-521](http://ali.pub/2oy76c), [3 buttons](http://ali.pub/33lzue), [prototype board](http://ali.pub/340eo5), [cable 2m miniUSB](http://ali.pub/340epp) or [microUSB](http://ali.pub/340eqa) (depending on the arduino) and [tape Velcro](http://ali.pub/33pbqa). Solder the scheme. Attach to the back of the case, for example, with rubber bands.
 
