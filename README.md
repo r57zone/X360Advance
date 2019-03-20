@@ -1,5 +1,5 @@
-[![EN](https://user-images.githubusercontent.com/9499881/33184537-7be87e86-d096-11e7-89bb-f3286f752bc6.png)](https://github.com/r57zone/X360Advance-Arduino/blob/master/README.md) 
-[![RU](https://user-images.githubusercontent.com/9499881/27683795-5b0fbac6-5cd8-11e7-929c-057833e01fb1.png)](https://github.com/r57zone/X360Advance-Arduino/blob/master/README.RU.md)
+[![EN](https://user-images.githubusercontent.com/9499881/33184537-7be87e86-d096-11e7-89bb-f3286f752bc6.png)](https://github.com/r57zone/X360Advance/) 
+[![RU](https://user-images.githubusercontent.com/9499881/27683795-5b0fbac6-5cd8-11e7-929c-057833e01fb1.png)](https://github.com/r57zone/X360Advance/blob/master/README.RU.md)
 # X360Advance (XInput) 
 External Arduino Gyroscope for the Xbox gamepad that allows to use it as a steering wheel, and also help more accurately aim.
 
@@ -37,7 +37,7 @@ Firmware and libraries can be found at the link below.
 ## Download
 >Version for Windows XP, 7, 8.1, 10.
 
-**[Download](https://github.com/r57zone/X360Advance-Arduino/releases)**
+**[Download](https://github.com/r57zone/X360Advance/releases)**
 
 ## Feedback
 `r57zone[at]gmail.com`
