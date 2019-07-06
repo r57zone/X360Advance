@@ -27,7 +27,7 @@
 
 ![](https://user-images.githubusercontent.com/9499881/52437030-42760980-2b2f-11e9-8ce5-14b45b30ca31.png)
 
-![](https://user-images.githubusercontent.com/9499881/52437903-78b48880-2b31-11e9-81ac-7b639286db70.png)
+![](https://user-images.githubusercontent.com/9499881/60760041-9aae2a80-a03f-11e9-81a0-e87cf84a0660.png)
 
 
 Также можно сделать всего один провод, с помощью USB-хаба. [USB-хаб как на картинке](http://ali.pub/3ixx9v) имеет небольшую плату и её можно разместить внутри геймпада. 

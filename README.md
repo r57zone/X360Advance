@@ -23,14 +23,14 @@ Perhaps for some games you will have to rename "xinput1_3.dll" to one of the nam
 
 For games in which for some reason the xinput library did not work, you can use the application "X360AdvanceApp", which helps in aiming.
 ## Arduino
-Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-521](http://ali.pub/2oy76c), [3 buttons](http://ali.pub/33lzue), [prototype board](http://ali.pub/340eo5), [cable 2m miniUSB](http://ali.pub/340epp) or [microUSB](http://ali.pub/340eqa) (depending on the arduino) and [tape Velcro](http://ali.pub/33pbqa). Solder the board. Attach to the back of the case, for example, with rubber bands.
+Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-521](http://ali.pub/2oy76c), [3 buttons](http://ali.pub/33lzue), [prototype board](http://ali.pub/340eo5), [cable 2m miniUSB](http://ali.pub/340epp) or [microUSB](http://ali.pub/340eqa) (depending on the arduino) and [tape Velcro](http://ali.pub/33pbqa). Solder the board by scheme. Attach to the back of the case, for example, with rubber bands.
 
 ![](https://user-images.githubusercontent.com/9499881/52437030-42760980-2b2f-11e9-8ce5-14b45b30ca31.png)
 
-![](https://user-images.githubusercontent.com/9499881/52437903-78b48880-2b31-11e9-81ac-7b639286db70.png)
+![](https://user-images.githubusercontent.com/9499881/60760041-9aae2a80-a03f-11e9-81a0-e87cf84a0660.png)
 
 
-Also can make just one wire using a USB hub. The [USB hub like on photo] (http://ali.pub/3ixx9v) has a small board and can be placed inside the gamepad.
+Also can make just one wire using a USB hub. The [USB hub like on photo](http://ali.pub/3ixx9v) has a small board and can be placed inside the gamepad.
 
 ![](https://user-images.githubusercontent.com/9499881/60759864-dc89a180-a03c-11e9-8bf4-d0b84894c0e1.png)
 
