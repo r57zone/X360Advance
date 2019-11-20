@@ -55,6 +55,9 @@ Flash calibration sketch, put on a flat surface, get the data for calibration. [
 
 Firmware and libraries can be found at the link below.
 
+## Possible problems
+Some games are incompatible with this method, since they are not designed to use a mouse and a gamepad at the same time. Some games can constantly change button icons (from keyboard to gamepad and vice versa).
+
 ## Download
 >Version for Windows 7, 8.1, 10.
 
