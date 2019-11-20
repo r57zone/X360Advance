@@ -1,0 +1,15 @@
+explorer.exe
+iexplore.exe
+cmd.exe
+Taskmgr.exe
+ApplicationFrameHost.exe
+WindowsInternal.ComposableShell.Experiences.TextInput.InputApp.exe
+mspaint.exe
+notepad.exe
+chrome.exe
+firefox.exe
+MicrosoftEdge.exe
+MicrosoftEdgeCP.exe
+MicrosoftEdgeSH.exe
+opera.exe
+Telegram.exe

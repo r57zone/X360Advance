@@ -1,5 +1,3 @@
-#include "stdafx.h"
-
 #include <thread>
 #include <windows.h>
 #include <math.h>
@@ -161,8 +159,12 @@ void ArduinoRead()
 			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 			Centering();
 		}
-
-
+		if (ArduinoData[0] == 6)
+		{
+			GameMode = 3;
+			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
+			Centering();
+		}
 	}
 }
 
@@ -225,13 +227,13 @@ SHORT ToLeftStick(double Value)
 	return MyValue;
 }
 
-/*SHORT ThumbFix(double Value)
+SHORT ThumbFix(double Value)
 {
 	int MyValue = round(Value);
 	if (MyValue > 32767) MyValue = 32767;
 	if (MyValue < -32767) MyValue = -32767;
 	return MyValue;
-}*/
+}
 
 DLLEXPORT BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
@@ -421,10 +423,18 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 				MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
 				break;
 			}
+
+			case 3:	//Fully emulation
+			{
+				pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
+				pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
+
+				break;
+			}
 		}
 	}
 
-	pState->dwPacketNumber = GetTickCount();
+	pState->dwPacketNumber = myPState.dwPacketNumber;
 
 	return myStatus;
 }

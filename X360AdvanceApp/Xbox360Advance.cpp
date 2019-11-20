@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include <windows.h>
 #include <atlstr.h> 
 #include <cmath>
@@ -118,6 +117,9 @@ int main()
 	}
 
 	DWORD bytesRead;
+	bool Debug = false;
+	BYTE DebugMode = 0;
+	float MaxAngle = 0, MinAngle = 0;
 
 	while (ArduinoWork) {
 		if ((GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0) break;
@@ -170,6 +172,48 @@ int main()
 			YRPOffset[0] = LastArduinoData[0];
 			YRPOffset[1] = LastArduinoData[2];
 			YRPOffset[2] = LastArduinoData[3];
+		}
+
+		if ((GetAsyncKeyState(VK_NUMPAD0) & 0x8000) != 0) //Debug
+			Debug = !Debug;
+			
+		if (Debug) {
+
+			if ((GetAsyncKeyState(VK_NUMPAD1) & 0x8000) != 0)
+			{
+				DebugMode = 1;
+				MaxAngle = 0;
+				MinAngle = 0;
+			}
+
+			if ((GetAsyncKeyState(VK_NUMPAD2) & 0x8000) != 0)
+			{
+				DebugMode = 2;
+				MaxAngle = 0;
+				MinAngle = 0;
+			}
+			
+			if ((GetAsyncKeyState(VK_NUMPAD3) & 0x8000) != 0)
+			{
+				DebugMode = 3;
+				MaxAngle = 0;
+				MinAngle = 0;
+			}
+
+			if (DebugMode == 0)
+				printf("%7.2f \t %7.2f \t %7.2f \t %7.2f\r\n", ArduinoData[0], ArduinoData[1], ArduinoData[2], ArduinoData[3]);
+
+			if (DebugMode > 0 && DebugMode < 4)
+			{
+				if (MaxAngle < ArduinoData[DebugMode])
+					MaxAngle = ArduinoData[DebugMode];
+
+				if (MinAngle > ArduinoData[DebugMode])
+					MinAngle = ArduinoData[DebugMode];
+
+				printf("YPR index=%d\tAngle=%7.2f\tMax=%7.2f\tMin=%7.2f\r\n", DebugMode, ArduinoData[DebugMode], MaxAngle, MinAngle);
+			}
+
 		}
 	}
 	
