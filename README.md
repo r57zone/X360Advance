@@ -16,7 +16,7 @@ There are 3 modes of use:
 The centering of the axes occurs when you press the steering wheel button or FPS.
 
 ## Setup: first method (recommended)
-The first way is to use the "XInput Injector" program. It is located in the notification area and allows you to infiltrate the game process in a couple of clicks, and use a gyroscope.
+The [first way](https://youtu.be/jzjp3BKtdSs) is to use the "XInput Injector" program. It is located in the notification area and allows you to infiltrate the game process in a couple of clicks, and use a gyroscope.
 
 ![](https://user-images.githubusercontent.com/9499881/69274645-3a85e280-0bf4-11ea-9df6-31a8e2b8dc62.png)
 
