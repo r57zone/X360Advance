@@ -59,6 +59,8 @@ var
   RunOnce: boolean;
   HideProcessList: TStringList;
 
+  IDS_FAIL_INJECTION, IDS_LAST_UPDATE: string;
+
 const
   LibrariesFolder = 'Libraries';
   UtilitiesFolder = 'Utilities';
@@ -244,14 +246,18 @@ begin
   SetWindowLong(Application.Handle, GWL_EXSTYLE, GetWindowLong(Application.Handle, GWL_EXSTYLE) or WS_EX_TOOLWINDOW);
   Height:=ListView.Height + RefreshBtn.Height + 30;
 
+  IDS_FAIL_INJECTION:='Failed to make an injection.';
+  IDS_LAST_UPDATE:='Last update:';
   if GetLocaleInformation(LOCALE_SENGLANGUAGE) = 'Russian' then begin
     ListView.Columns[1].Caption:='Имя';
     ListView.Columns[2].Caption:='Заголовок';
     ListView.Columns[3].Caption:='Расположение';
     RefreshBtn.Caption:='Обновить';
     HideBtn.Caption:='Скрыть';
+    IDS_FAIL_INJECTION:='Не удалось внедриться в процесс.';
     ShowHideBtn.Caption:='Показать / скрыть';
     AboutBtn.Caption:='О программе...';
+    IDS_LAST_UPDATE:='Последнее обновление:';
     CloseBtn.Caption:='Выход';
   end;
 end;
@@ -291,10 +297,10 @@ end;
 
 procedure TMain.AboutBtnClick(Sender: TObject);
 begin
-  Application.MessageBox(PChar(Caption + ' 0.2' + #13#10 +
-  'Last update:' + ' 20.11.2019' + #13#10 +
+  Application.MessageBox(PChar(Caption + ' 0.2.1' + #13#10 +
+  IDS_LAST_UPDATE + ' 01.12.2019' + #13#10 +
   'https://r57zone.github.io' + #13#10 +
-  'r57zone@gmail.com'), 'About...', MB_ICONINFORMATION);
+  'r57zone@gmail.com'), PChar(AboutBtn.Caption), MB_ICONINFORMATION);
 end;
 
 procedure TMain.ShowHideBtnClick(Sender: TObject);
@@ -346,7 +352,7 @@ var
   ProcInfo: TPROCESSINFORMATION;
 begin
   GetStartupInfo(StartInfo);
-  if CreateProcess(nil, PChar(ProcessPath), nil, nil, false, 0, nil, nil, StartInfo, ProcInfo) then begin
+  if CreateProcess(nil, PChar(ProcessPath), nil, nil, false, CREATE_NO_WINDOW, nil, nil, StartInfo, ProcInfo) then begin
     CloseHandle(ProcInfo.hThread);
     WaitForSingleObject(ProcInfo.hProcess, INFINITE);
     GetExitCodeProcess(ProcInfo.hProcess, Result);
@@ -372,7 +378,7 @@ begin
         6: ProcessStatus:=RunProcess(UtilitiesFolder + '\Injector64.exe -n ' + Item.SubItems[0] + ' -i ' + '..\' + LibrariesFolder + '\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\XInputInject64.dll');
       end;
     if ProcessStatus = 1 then
-      MessageBox(0, 'Failed to make an injection.', PChar(Caption), MB_ICONWARNING);
+      MessageBox(0, PChar(IDS_FAIL_INJECTION), PChar(Caption), MB_ICONWARNING);
     AppHide;
   end;
 end;

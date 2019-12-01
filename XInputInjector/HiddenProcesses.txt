@@ -6,10 +6,13 @@ ApplicationFrameHost.exe
 WindowsInternal.ComposableShell.Experiences.TextInput.InputApp.exe
 mspaint.exe
 notepad.exe
+calc.exe
+regedit.exe
 chrome.exe
 firefox.exe
 MicrosoftEdge.exe
 MicrosoftEdgeCP.exe
 MicrosoftEdgeSH.exe
 opera.exe
+thunderbird.exe
 Telegram.exe

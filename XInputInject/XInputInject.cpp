@@ -1,4 +1,4 @@
-﻿#include <Windows.h>
+﻿#include <windows.h>
 #include <thread>
 #include <math.h>
 #include <atlstr.h> 
@@ -125,11 +125,20 @@ void ArduinoRead()
 			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 			Centering();
 		}
+
 	}
 }
 
-void ArduinoStart() {
-	
+void ArduinoStart()
+{
+
+	TCHAR HardwareInsertWav[MAX_PATH] = { 0 };
+	TCHAR HardwareFailWav[MAX_PATH] = { 0 };
+	GetSystemWindowsDirectory(HardwareInsertWav, sizeof(HardwareInsertWav));
+	_tcscpy_s(HardwareFailWav, sizeof(HardwareInsertWav), HardwareInsertWav);
+	_tcscat_s(HardwareInsertWav, sizeof(HardwareInsertWav), _T("\\Media\\Windows Hardware Insert.wav"));
+	_tcscat_s(HardwareFailWav, sizeof(HardwareFailWav), _T("\\Media\\Windows Hardware Fail.wav")); 
+
 	CRegKey key;
 	DWORD PortNumber = 0;
 
@@ -139,7 +148,7 @@ void ArduinoStart() {
 
 		key.QueryDWORDValue(_T("Port"), PortNumber);
 		
-		key.QueryDWORDValue(_T("WheelAngle"), WheelAngle);
+		key.QueryDWORDValue(_T("WheelAngle"), WheelAngle); //def 75
 		key.QueryDWORDValue(_T("SensX"), SensX); //def 45
 		key.QueryDWORDValue(_T("SensY"), SensY); //def 35
 
@@ -166,14 +175,18 @@ void ArduinoStart() {
 
 			if (SetCommState(hSerial, &dcbSerialParams))
 			{
+				WorkStatus++;
 				if (WorkStatus == 3)
-					PlaySound("C:\\Windows\\Media\\Windows Hardware Insert.wav", NULL, SND_ASYNC); //Alarm04.wav
+					PlaySound(HardwareInsertWav, NULL, SND_ASYNC); //Alarm04.wav
 				ArduinoWork = true;
 				PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 				pArduinothread = new std::thread(ArduinoRead);
 			}
 		}
 	}
+
+	if (WorkStatus < 3)
+		PlaySound(HardwareFailWav, NULL, SND_ASYNC);
 }
 
 SHORT ToLeftStick(double Value)
@@ -244,58 +257,47 @@ void MouseMove(const double axisX, const double axisY) //Implementation from Ope
 //Own GetState
 DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
-
 	if (ArduinoInit == false) {
 		ArduinoInit = true;
 		ArduinoStart();
 	}
 
-	// first call the original function
 	//ZeroMemory(pState, sizeof(XINPUT_STATE));
+	// first call the original function
 	DWORD toReturn = hookedXInputGetState(dwUserIndex, pState);
 	
-	if (ArduinoWork) {
-	
-
+	if (ArduinoWork)
 		switch (GameMode)
 		{
-		case 1: //Wheel
-		{
-			pState->Gamepad.sThumbLX = ToLeftStick(OffsetYPR(ArduinoData[1], YRPOffset[0])) * -1;
-			break;
-		}
+			case 1: //Wheel
+			{
+				pState->Gamepad.sThumbLX = ToLeftStick(OffsetYPR(ArduinoData[1], YRPOffset[0])) * -1;
+				break;
+			}
+			case 2:	//FPS
+			{
+				//Gyroscope offset, experimental
+				//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[1], YRPOffset[0]) * -182 * StickSensX); //StickSensX - 9
+				//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[3], YRPOffset[2]) * -182 * StickSensY); //StickSensX - 7
 
+				
+				/*if (pState->Gamepad.bLeftTrigger == 0) {
+					MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
+				} else {
+					MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1 * TriggerSens, OffsetYPR(ArduinoData[3], YRPOffset[2]) * TriggerSens);
+				}*/
 
-		case 2:	//FPS
-		{
-			//Fully emulation
-			//pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
-			//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
-
-			//Gyroscope offset
-			//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[1], YRPOffset[0]) * -182 * StickSensX); //StickSensX - 9
-			//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[3], YRPOffset[2]) * -182 * StickSensY); //StickSensX - 7
-
-			/*if (pState->Gamepad.bLeftTrigger == 0) {
 				MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
-			} else {
-				MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1 * TriggerSens, OffsetYPR(ArduinoData[3], YRPOffset[2]) * TriggerSens);
-			}*/
+				break;
+			}
+			case 3:	//Fully emulation, experimental
+			{
+				pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
+				pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
 
-			MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
-			break;
+				break;
+			}
 		}
-
-		case 3:	//Fully emulation
-		{
-			pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
-			pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
-
-			break;
-		}
-		}
-
-	}
 
 	return toReturn;
 }
@@ -306,54 +308,50 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 )
 {
 	switch (ul_reason_for_call){
-		case DLL_PROCESS_ATTACH: {
+		case DLL_PROCESS_ATTACH:
+		{
+			//MessageBox(0, "ATTACH", "XINPUT", MB_OK);
+			if (MH_Initialize() == MH_OK) {
 
-			if (MH_Initialize() == MH_OK)
-				WorkStatus++;
-
-			//1.0
-			if (MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
-				WorkStatus++;
-
-			//1_1
-			if (hookedXInputGetState == nullptr)
-				if (MH_CreateHookApiEx(L"XINPUT_1_1", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+				//1.0
+				if (MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
 					WorkStatus++;
 
-			//1_2
-			if (hookedXInputGetState == nullptr)
-				if (MH_CreateHookApiEx(L"XINPUT_1_2", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+				//1_1
+				if (hookedXInputGetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT_1_1", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+						WorkStatus++;
+
+				//1_2
+				if (hookedXInputGetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT_1_2", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+						WorkStatus++;
+
+				//1_3
+				if (hookedXInputGetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT1_3", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+						WorkStatus++;
+
+				//1_4
+				if (hookedXInputGetState == nullptr)
+					if (MH_CreateHookApiEx(L"XINPUT1_4", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+						WorkStatus++;
+
+				//if (MH_EnableHook(&detourXInputGetState) == MH_OK) //Not working
+				if (MH_EnableHook(MH_ALL_HOOKS) == MH_OK)
 					WorkStatus++;
-
-			//1_3
-			if (hookedXInputGetState == nullptr)
-				if (MH_CreateHookApiEx(L"XINPUT1_3", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
-					WorkStatus++;
-
-			//1_4
-			if (hookedXInputGetState == nullptr)
-				if (MH_CreateHookApiEx(L"XINPUT1_4", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
-					WorkStatus++;
-		
-
-			//if (MH_EnableHook(&detourXInputGetState) == MH_OK) //Not working
-			if (MH_EnableHook(MH_ALL_HOOKS) == MH_OK)
-				WorkStatus++;
-				//MessageBox(0, "XInput hooked", "XINPUT", MB_OK);
-
+			}
 
 			break;
 		}
 
 		/*case DLL_THREAD_ATTACH:
-			{
-				MessageBox(0, "THREAD_ATTACH", "XINPUT", MB_OK);
-				break;
-			}
+		{
+			break;
+		}
 
 		case DLL_THREAD_DETACH:
-			{
-			MessageBox(0, "THREAD_DETACH", "XINPUT", MB_OK);
+		{
 			break;
 		}*/
 
@@ -369,11 +367,10 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 				}
 			}
 			CloseHandle(hSerial);
-			//MessageBox(0, "PROCESS_DETACH", "XINPUT", MB_OK);
 			MH_DisableHook(&detourXInputGetState);
 			MH_Uninitialize();
 			break;
 		}
 	}
-	return TRUE;
+	return true;
 }
