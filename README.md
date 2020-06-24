@@ -51,6 +51,11 @@ Also can make just one wire using a USB hub. The [USB hub like on photo](http://
 ![](https://user-images.githubusercontent.com/9499881/60759864-dc89a180-a03c-11e9-8bf4-d0b84894c0e1.png)
 
 
+Also can pack everything in the controller case. To do this, remove the board support elements from the back of the inside.
+
+![](https://user-images.githubusercontent.com/9499881/85542395-1aa31b00-b62a-11ea-8c04-addbd9163c52.png)
+
+
 Flash calibration sketch, put on a flat surface, get the data for calibration. [Insert calibration data into the main sketch](https://youtu.be/sKuiGC6Mxf0?t=184).
 
 Firmware and libraries can be found at the link below.
