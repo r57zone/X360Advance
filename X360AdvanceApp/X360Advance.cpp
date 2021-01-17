@@ -1,5 +1,4 @@
 #include <windows.h>
-#include <atlstr.h> 
 #include <cmath>
 #include <algorithm>
 #include "IniReader\IniReader.h"
@@ -82,8 +81,8 @@ int main()
 	SensY = IniFile.ReadFloat("Main", "SensY", 3.5);
 	HANDLE hSerial;
 
-	CString sPortName;
-	sPortName.Format(_T("COM%d"), IniFile.ReadInteger("Main", "ComPort", 3));
+	char sPortName[8];
+	sprintf_s(sPortName, "COM%d", IniFile.ReadInteger("Main", "ComPort", 2));
 
 	hSerial = ::CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -114,6 +113,7 @@ int main()
 	else
 	{
 		printf("Mouse movement activated\r\nNumpad 5 - centering\r\n");
+		printf("Press \"~\" to exit\r\n");
 	}
 
 	DWORD bytesRead;
@@ -122,7 +122,7 @@ int main()
 	float MaxAngle = 0, MinAngle = 0;
 
 	while (ArduinoWork) {
-		if ((GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0) break;
+		if ((GetAsyncKeyState(192) & 0x8000) != 0) break; //~
 
 		ReadFile(hSerial, &ArduinoData, sizeof(ArduinoData), &bytesRead, 0);
 

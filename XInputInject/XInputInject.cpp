@@ -125,6 +125,8 @@ void ArduinoRead()
 			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 			Centering();
 		}
+		
+		Sleep(1); //Don't overload CPU
 
 	}
 }
@@ -155,9 +157,8 @@ void ArduinoStart()
 	}
 	key.Close();
 
-
-	CString sPortName;
-	sPortName.Format(_T("COM%d"), PortNumber);
+	char sPortName[8];
+	sprintf_s(sPortName, "COM%d", PortNumber);
 
 	hSerial = ::CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -314,17 +315,17 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 			if (MH_Initialize() == MH_OK) {
 
 				//1.0
-				if (MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+				if (MH_CreateHookApiEx(L"XINPUT9_1_0", "XInputGetStateEx", &detourXInputGetState, &hookedXInputGetState) == MH_OK) //Ex, Bulletstorm
 					WorkStatus++;
 
 				//1_1
 				if (hookedXInputGetState == nullptr)
-					if (MH_CreateHookApiEx(L"XINPUT_1_1", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+					if (MH_CreateHookApiEx(L"XINPUT_1_1", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK) //Ex?
 						WorkStatus++;
 
 				//1_2
 				if (hookedXInputGetState == nullptr)
-					if (MH_CreateHookApiEx(L"XINPUT_1_2", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK)
+					if (MH_CreateHookApiEx(L"XINPUT_1_2", "XInputGetState", &detourXInputGetState, &hookedXInputGetState) == MH_OK) //Ex?
 						WorkStatus++;
 
 				//1_3
