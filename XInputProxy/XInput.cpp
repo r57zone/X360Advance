@@ -89,15 +89,15 @@ _XINPUT_STATE myPState;
 
 HMODULE hDll;
 
-bool ArduinoInit = false, ArduinoWork = false;
+bool ArduinoInit = false, ArduinoWork = false, OnlyTrigger;
 std::thread *pArduinothread = NULL;
 HANDLE hSerial;
 float ArduinoData[4] = { 0, 0, 0, 0 }; //Mode, Yaw, Pitch, Roll
 float LastArduinoData[4] = { 0, 0, 0, 0 };
 float YRPOffset[3] = { 0, 0, 0 };
 BYTE GameMode = 0;
-double WheelAngle, SensX, SensY;//, TriggerSens;
-int last_x = 0, last_y = 0;
+double WheelAngle, SensX, SensY, TriggerSens;
+float accumulatedX = 0, accumulatedY = 0;
 
 void Centering()
 {
@@ -171,9 +171,10 @@ void ArduinoRead()
 void ArduinoStart() {
 	CIniReader IniFile("X360Advance.ini");
 	WheelAngle = IniFile.ReadFloat("Main", "WheelAngle", 75);
-	SensX = IniFile.ReadFloat("Main", "SensX", 4.5);
-	SensY = IniFile.ReadFloat("Main", "SensY", 3.5);
-	//TriggerSens = IniFile.ReadFloat("Main", "TriggerSens", 0.5);
+	SensX = IniFile.ReadFloat("Main", "SensX", 35);
+	SensY = IniFile.ReadFloat("Main", "SensY", 30);
+	TriggerSens = IniFile.ReadFloat("Main", "TriggerSens", 1);
+	OnlyTrigger = IniFile.ReadFloat("Main", "ActivateByTrigger", 0);
 
 	TCHAR XInputPath[MAX_PATH] = { 0 };
 	GetSystemWindowsDirectory(XInputPath, sizeof(XInputPath));
@@ -192,8 +193,8 @@ void ArduinoStart() {
 			hDll = NULL;
 	}
 
-	CString sPortName;
-	sPortName.Format(_T("COM%d"), IniFile.ReadInteger("Main", "ComPort", 3));
+	char sPortName[8];
+	sprintf_s(sPortName, "COM%d", IniFile.ReadInteger("Main", "ComPort", 2));
 
 	hSerial = ::CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -276,40 +277,25 @@ double OffsetYPR(float f, float f2)
 	return f;
 }
 
-int MouseGetDelta(int val, int prev) //Implementation from OpenTrack https://github.com/opentrack/opentrack/blob/unstable/proto-mouse/
-{
-	const int a = std::abs(val - prev), b = std::abs(val + prev);
-	if (b < a)
-		return val + prev;
-	else
-		return val - prev;
-}
+//Implementation from https://github.com/JibbSmart/JoyShockMapper/blob/master/JoyShockMapper/src/win32/InputHelpers.cpp
+void MoveMouse(float x, float y) {
+	accumulatedX += x;
+	accumulatedY += y;
 
-void MouseMove(const double axisX, const double axisY) //Implementation from OpenTrack https://github.com/opentrack/opentrack/blob/unstable/proto-mouse/
-{
-	int mouse_x = 0, mouse_y = 0;
-	
-	mouse_x = round(axisX * SensX * 2);
-	mouse_y = round(axisY * SensY * 2);
+	int applicableX = (int)accumulatedX;
+	int applicableY = (int)accumulatedY;
 
-	const int dx = MouseGetDelta(mouse_x, last_x);
-	const int dy = MouseGetDelta(mouse_y, last_y);
+	accumulatedX -= applicableX;
+	accumulatedY -= applicableY;
 
-	last_x = mouse_x;
-	last_y = mouse_y;
-
-	if (dx || dy)
-	{
-		INPUT input;
-		input.type = INPUT_MOUSE;
-		MOUSEINPUT& mi = input.mi;
-		mi = {};
-		mi.dx = dx;
-		mi.dy = dy;
-		mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_MOVE_NOCOALESCE;
-
-		SendInput(1, &input, sizeof(input));
-	}
+	INPUT input;
+	input.type = INPUT_MOUSE;
+	input.mi.mouseData = 0;
+	input.mi.time = 0;
+	input.mi.dx = applicableX;
+	input.mi.dy = applicableY;
+	input.mi.dwFlags = MOUSEEVENTF_MOVE;
+	SendInput(1, &input, sizeof(input));
 }
 
 DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE *pState)
@@ -406,21 +392,18 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 
 			case 2:	//FPS
 			{
-				//Fully emulation
-				//pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
-				//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
-			
-				//Gyroscope offset
-				//pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[1], YRPOffset[0]) * -182 * StickSensX); //StickSensX - 9
-				//pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[3], YRPOffset[2]) * -182 * StickSensY); //StickSensX - 7
+				float NewX = OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1;
+				float NewY = OffsetYPR(ArduinoData[3], YRPOffset[2]);
 
-				/*if (pState->Gamepad.bLeftTrigger == 0) {
-					MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
-				} else {
-					MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1 * TriggerSens, OffsetYPR(ArduinoData[3], YRPOffset[2]) * TriggerSens);
-				}*/
+				if (pState->Gamepad.bLeftTrigger == 0) {
+					if (OnlyTrigger == false)
+						MoveMouse(NewX * SensX, NewY * SensY);
+				}
+				else
+					MoveMouse(NewX * SensX * TriggerSens, NewY * SensY * TriggerSens);
 
-				MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
+				Centering();
+
 				break;
 			}
 
@@ -428,6 +411,8 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 			{
 				pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
 				pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
+
+				Centering();
 
 				break;
 			}

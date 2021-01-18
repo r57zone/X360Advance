@@ -28,7 +28,7 @@ object Main: TMain
       end
       item
         AutoSize = True
-        Caption = 'Name'
+        Caption = 'Process'
       end
       item
         AutoSize = True
@@ -65,14 +65,14 @@ object Main: TMain
     TabOrder = 2
     OnChange = SelectLibCBChange
   end
-  object HideBtn: TButton
+  object SettingsBtn: TButton
     Left = 263
     Top = 196
     Width = 75
     Height = 25
-    Caption = 'Hide'
+    Caption = 'Settings'
     TabOrder = 3
-    OnClick = HideBtnClick
+    OnClick = SettingsBtnClick
   end
   object ImageList: TImageList
     Height = 32

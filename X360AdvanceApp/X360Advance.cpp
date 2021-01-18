@@ -4,10 +4,10 @@
 #include "IniReader\IniReader.h"
 
 float SensX, SensY;
-float ArduinoData[4] = { 0, 0, 0, 0 }; //Mode, Yaw, Pitch, Roll
+float ArduinoData[4] = { 0, 0, 0, 0 }; // Mode, Yaw, Pitch, Roll
 float LastArduinoData[4] = { 0, 0, 0, 0 };
 float YRPOffset[3] = { 0, 0, 0 };
-int last_x = 0, last_y = 0;
+float accumulatedX = 0, accumulatedY = 0;
 int GameMode = 2;
 bool ArduinoWork = false;
 
@@ -36,40 +36,25 @@ bool CorrectAngleValue(float Value)
 	}
 }
 
-int MouseGetDelta(int val, int prev) //Implementation from OpenTrack https://github.com/opentrack/opentrack/blob/unstable/proto-mouse/
-{
-	const int a = std::abs(val - prev), b = std::abs(val + prev);
-	if (b < a)
-		return val + prev;
-	else
-		return val - prev;
-}
+//Implementation from https://github.com/JibbSmart/JoyShockMapper/blob/master/JoyShockMapper/src/win32/InputHelpers.cpp
+void MouseMove(float x, float y) {
+	accumulatedX += x;
+	accumulatedY += y;
 
-void MouseMove(const double axisX, const double axisY) //Implementation from OpenTrack https://github.com/opentrack/opentrack/blob/unstable/proto-mouse/
-{
-	int mouse_x = 0, mouse_y = 0;
+	int applicableX = (int)accumulatedX;
+	int applicableY = (int)accumulatedY;
 
-	mouse_x = round(axisX * SensX * 2);
-	mouse_y = round(axisY * SensY * 2);
+	accumulatedX -= applicableX;
+	accumulatedY -= applicableY;
 
-	const int dx = MouseGetDelta(mouse_x, last_x);
-	const int dy = MouseGetDelta(mouse_y, last_y);
-
-	last_x = mouse_x;
-	last_y = mouse_y;
-
-	if (dx || dy)
-	{
-		INPUT input;
-		input.type = INPUT_MOUSE;
-		MOUSEINPUT& mi = input.mi;
-		mi = {};
-		mi.dx = dx;
-		mi.dy = dy;
-		mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_MOVE_NOCOALESCE;
-
-		SendInput(1, &input, sizeof(input));
-	}
+	INPUT input;
+	input.type = INPUT_MOUSE;
+	input.mi.mouseData = 0;
+	input.mi.time = 0;
+	input.mi.dx = applicableX;
+	input.mi.dy = applicableY;
+	input.mi.dwFlags = MOUSEEVENTF_MOVE;
+	SendInput(1, &input, sizeof(input));
 }
 
 int main()
@@ -77,8 +62,8 @@ int main()
 	SetConsoleTitle("X360Advance");
 	
 	CIniReader IniFile("X360Advance.ini");
-	SensX = IniFile.ReadFloat("Main", "SensX", 4.5);
-	SensY = IniFile.ReadFloat("Main", "SensY", 3.5);
+	SensX = IniFile.ReadFloat("Main", "SensX", 35);
+	SensY = IniFile.ReadFloat("Main", "SensY", 30);
 	HANDLE hSerial;
 
 	char sPortName[8];
@@ -112,7 +97,7 @@ int main()
 	}
 	else
 	{
-		printf("Mouse movement activated\r\nNumpad 5 - centering\r\n");
+		printf("Mouse movement activated\r\nNumpad 5 - reset\r\n");
 		printf("Press \"~\" to exit\r\n");
 	}
 
@@ -162,9 +147,15 @@ int main()
 			YRPOffset[2] = LastArduinoData[3];
 		}
 
-		if (GameMode == 2)
-			MouseMove(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1, OffsetYPR(ArduinoData[3], YRPOffset[2]));
+		if (GameMode == 2) {
+			float NewX = OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1;
+			float NewY = OffsetYPR(ArduinoData[3], YRPOffset[2]);
 
+			MouseMove(NewX * SensX, NewY * SensY);
+
+			YRPOffset[0] = LastArduinoData[1];
+			YRPOffset[2] = LastArduinoData[3];
+		}
 
 		if ((GetAsyncKeyState(VK_NUMPAD5) & 0x8000) != 0) {
 			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);

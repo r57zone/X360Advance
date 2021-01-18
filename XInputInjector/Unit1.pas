@@ -20,7 +20,7 @@ type
     N2: TMenuItem;
     ShowHideBtn: TMenuItem;
     SelectLibCB: TComboBox;
-    HideBtn: TButton;
+    SettingsBtn: TButton;
     procedure RefreshBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -31,7 +31,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure ListViewDblClick(Sender: TObject);
     procedure SelectLibCBChange(Sender: TObject);
-    procedure HideBtnClick(Sender: TObject);
+    procedure SettingsBtnClick(Sender: TObject);
   private
     procedure WMNCHITTEST(var Msg: TMessage); message WM_NCHITTEST;
     procedure DefaultHandler(var Message); override;
@@ -139,8 +139,10 @@ begin
   Main.SelectLibCB.ItemIndex:=0;
 
   for i:=0 to Main.SelectLibCB.Items.Count - 1 do
-    if Main.SelectLibCB.Items.Strings[i] = SelectName then
+    if Main.SelectLibCB.Items.Strings[i] = SelectName then begin
       Main.SelectLibCB.ItemIndex:=i;
+      Main.SettingsBtn.Enabled:=FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + Main.SelectLibCB.Items.Strings[Main.SelectLibCB.ItemIndex] + '\Settings.exe');
+    end;
 end;
 
 procedure TMain.RefreshBtnClick(Sender: TObject);
@@ -178,7 +180,10 @@ begin
 
           Item:=ListView.Items.Add;
           Item.SubItems.Add(string(ProcInfo.szExeFile));
-          Item.SubItems.Add(StrPas(WindowTitle));
+          if Trim(StrPas(WindowTitle)) <> '' then
+            Item.SubItems.Add(StrPas(WindowTitle))
+          else
+            Item.SubItems.Add('-');
           Item.SubItems.Add(PIDPath);
           Item.ImageIndex:=ImageList.AddIcon(Icon);
 
@@ -249,11 +254,11 @@ begin
   IDS_FAIL_INJECTION:='Failed to make an injection.';
   IDS_LAST_UPDATE:='Last update:';
   if GetLocaleInformation(LOCALE_SENGLANGUAGE) = 'Russian' then begin
-    ListView.Columns[1].Caption:='Имя';
+    ListView.Columns[1].Caption:='Процесс';
     ListView.Columns[2].Caption:='Заголовок';
     ListView.Columns[3].Caption:='Расположение';
     RefreshBtn.Caption:='Обновить';
-    HideBtn.Caption:='Скрыть';
+    SettingsBtn.Caption:='Настройка';
     IDS_FAIL_INJECTION:='Не удалось внедриться в процесс.';
     ShowHideBtn.Caption:='Показать / скрыть';
     AboutBtn.Caption:='О программе...';
@@ -297,8 +302,8 @@ end;
 
 procedure TMain.AboutBtnClick(Sender: TObject);
 begin
-  Application.MessageBox(PChar(Caption + ' 0.2.1' + #13#10 +
-  IDS_LAST_UPDATE + ' 01.12.2019' + #13#10 +
+  Application.MessageBox(PChar(Caption + ' 0.3' + #13#10 +
+  IDS_LAST_UPDATE + ' 18.01.2021' + #13#10 +
   'https://r57zone.github.io' + #13#10 +
   'r57zone@gmail.com'), PChar(AboutBtn.Caption), MB_ICONINFORMATION);
 end;
@@ -388,15 +393,17 @@ var
   Ini: TIniFile;
 begin
   if SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] <> '' then begin
+    SettingsBtn.Enabled:=FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe');
     Ini:=TIniFile.Create(ExtractFilePath(ParamStr(0)) + 'Setup.ini');
     Ini.WriteString('Main', 'CurrentLibrary', SelectLibCB.Items.Strings[SelectLibCB.ItemIndex]);
     Ini.Free;
   end;
 end;
 
-procedure TMain.HideBtnClick(Sender: TObject);
+procedure TMain.SettingsBtnClick(Sender: TObject);
 begin
-  AppHide;
+  if FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe') then
+    WinExec(PChar(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe'), SW_SHOW);
 end;
 
 end.
