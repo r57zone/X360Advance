@@ -93,7 +93,7 @@ begin
     XAxisSensitivityLbl.Caption:='Чувствительность оси Х';
     YAxisSensitivityLbl.Caption:='Чувствительность оси Y';
     TriggerSensitivityLbl.Caption:='Чувствит. с левым триггером';
-    TriggerSensitivityTB.Hint:='Уменьшите чувствительность, чтобы более точно целится.';
+    TriggerSensitivityTB.Hint:='Уменьшите чувствительность, чтобы более точно целиться.';
     ApplyBtn.Caption:='Применить';
     CloseBtn.Caption:='Выйти';
   end;
