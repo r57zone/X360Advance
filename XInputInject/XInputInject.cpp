@@ -122,7 +122,7 @@ void ArduinoRead()
 			Centering();
 		}
 		
-		//Sleep(1); //Don't overload CPU
+		if (bytesRead == 0) Sleep(1); //Don't overload CPU
 	}
 }
 
@@ -153,8 +153,8 @@ void ArduinoStart()
 	}
 	key.Close();
 
-	char sPortName[8];
-	sprintf_s(sPortName, "COM%d", PortNumber);
+	char sPortName[32];
+	sprintf_s(sPortName, "\\\\.\\COM%d", PortNumber);
 
 	hSerial = ::CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -188,29 +188,31 @@ void ArduinoStart()
 
 SHORT ToLeftStick(double Value)
 {
-	int MyValue = round((32767 / WheelAngle) * Value);
-	if (MyValue < -32767) MyValue = -32767;
-	if (MyValue > 32767) MyValue = 32767;
+	int MyValue = trunc((32767 / WheelAngle) * Value);
+	if (MyValue < -32767)
+		MyValue = -32767;
+	else if (MyValue > 32767)
+		MyValue = 32767;
 	return MyValue;
 }
 
 SHORT ThumbFix(double Value)
 {
-	int MyValue = round(Value);
-	if (MyValue > 32767) MyValue = 32767;
-	if (MyValue < -32767) MyValue = -32767;
+	int MyValue = trunc(Value);
+	if (MyValue > 32767)
+		MyValue = 32767;
+	else if (MyValue < -32767)
+		MyValue = -32767;
 	return MyValue;
 }
 
 double OffsetYPR(float f, float f2)
 {
 	f -= f2;
-	if (f < -180) {
+	if (f < -180)
 		f += 360;
-	}
-	else if (f > 180) {
+	else if (f > 180)
 		f -= 360;
-	}
 
 	return f;
 }
@@ -249,7 +251,7 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 	// first call the original function
 	DWORD toReturn = hookedXInputGetState(dwUserIndex, pState);
 
-	//Bugs: Crysis 2 is having problems, although it seemed to work before.
+	//Crysis 2 reads the state incorrectly, so there is a separate library for it.
 
 	if (toReturn == ERROR_SUCCESS && ArduinoWork)
 		switch (GameMode)
@@ -302,6 +304,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	switch (ul_reason_for_call){
 		case DLL_PROCESS_ATTACH:
 		{
+			// Injection trick taken here https://github.com/FransBouma/InjectableGenericCameraSystem
 			//MessageBox(0, "ATTACH", "XINPUT", MB_OK);
 			if (MH_Initialize() == MH_OK) {
 
