@@ -168,6 +168,8 @@ void ArduinoRead()
 			Centering();
 		}
 	}
+
+	if (bytesRead == 0) Sleep(1); // Don't overload CPU
 }
 
 void ArduinoStart() {
