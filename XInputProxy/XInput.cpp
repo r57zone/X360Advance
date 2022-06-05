@@ -95,6 +95,8 @@ HANDLE hSerial;
 float ArduinoData[4] = { 0, 0, 0, 0 }; //Mode, Yaw, Pitch, Roll
 float LastArduinoData[4] = { 0, 0, 0, 0 };
 float YRPOffset[3] = { 0, 0, 0 };
+float DeltaYRP[3] = { 0, 0, 0 };
+float LastYRP[3] = { 0, 0, 0 };
 BYTE GameMode = 0;
 double WheelAngle, SensX, SensY, TriggerSens;
 float accumulatedX = 0, accumulatedY = 0;
@@ -193,8 +195,9 @@ void ArduinoStart() {
 			hDll = NULL;
 	}
 
-	char sPortName[8];
-	sprintf_s(sPortName, "COM%d", IniFile.ReadInteger("Main", "ComPort", 2));
+	char sPortName[32];
+	sprintf_s(sPortName, "\\\\.\\COM%d", IniFile.ReadInteger("Main", "ComPort", 2));
+
 
 	hSerial = ::CreateFile(sPortName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -392,17 +395,18 @@ DLLEXPORT DWORD WINAPI XInputGetState(_In_ DWORD dwUserIndex, _Out_ XINPUT_STATE
 
 			case 2:	//FPS
 			{
-				float NewX = OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1;
-				float NewY = OffsetYPR(ArduinoData[3], YRPOffset[2]);
+				DeltaYRP[0] = OffsetYPR(ArduinoData[1], LastYRP[0]) * -1;
+				DeltaYRP[2] = OffsetYPR(ArduinoData[3], LastYRP[2]);
 
 				if (pState->Gamepad.bLeftTrigger == 0) {
 					if (OnlyTrigger == false)
-						MoveMouse(NewX * SensX, NewY * SensY);
+						MoveMouse(DeltaYRP[0] * SensX, DeltaYRP[2] * SensY);
 				}
 				else
-					MoveMouse(NewX * SensX * TriggerSens, NewY * SensY * TriggerSens);
+					MoveMouse(DeltaYRP[0] * SensX * TriggerSens, DeltaYRP[2] * SensY * TriggerSens);
 
-				Centering();
+				LastYRP[0] = ArduinoData[1];
+				LastYRP[2] = ArduinoData[3];
 
 				break;
 			}

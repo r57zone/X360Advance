@@ -28,15 +28,15 @@ For convenience, you can also add "XInput Injector" to startup.
 In the "XInput Injector" program itself, it is enough to select the name of the process and click on it; after successful implementation, the sound of connecting new equipment will be reproduced.
 
 ## Setup: second method
-The second way to use it is to copy the proxy DLL to the folder of the game itself. The method has poor compatibility, works mainly with old games.
+The second way to use it is to copy the proxy dll to the folder of the game itself. The method has poor compatibility, works mainly with old games.
 
 To configure, you need to change the COM port number in the "X360Advance.ini" file, the sensitivity of mouse and steering wheel movement, the default settings are recommended.
 
-Next, you need to copy the files "xinput1_3.dll" (for 32 bit games, and for 64 bit copy "xinput1_3x64.dll" and rename it "xinput1_3.dll") in the folder with the game and start the game.
+Next, you need to copy the files "xinput1_3.dll" (according to the bitness of the game, for a 32-bit game from the x86 folder, for a 64-bit game from the 64 folder) in the folder with the game and start the game.
 
 It may be necessary for some games to rename "xinput1_3.dll" to one of the names: "xinput9_1_0.dll", "xinput1_1.dll", "xinput1_2.dll" or "xinput1_4.dll" (only Metro applications).
 
-For games in which the XInput DLL library does not work, you can also use the "X360AdvanceApp" application, which allows you to simply emulate a mouse for aiming.
+For games in which the XInput dll library does not work, you can also use the "X360AdvanceApp" application, which allows you to simply emulate a mouse for aiming.
 
 ## External Arduino Gyroscope
 Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-521](http://ali.pub/2oy76c), [3 buttons](http://ali.pub/33lzue), [prototype board](http://ali.pub/340eo5), [cable 2m miniUSB](http://ali.pub/340epp) or [microUSB](http://ali.pub/340eqa) (depending on the arduino) and [tape Velcro](http://ali.pub/33pbqa). Solder the board by scheme. Attach to the back of the case, for example, with rubber bands.
@@ -46,7 +46,7 @@ Need to buy [Arduino Nano](http://ali.pub/2oy73f), rotation sensor [MPU 6050 GY-
 ![](https://user-images.githubusercontent.com/9499881/60760041-9aae2a80-a03f-11e9-81a0-e87cf84a0660.png)
 
 
-Also can make just one wire using a USB hub. The [USB hub like on photo](http://ali.pub/3ixx9v) has a small board and can be placed inside the gamepad.
+Also can make just one wire using a USB hub. The [USB hub](http://alii.pub/6d2ngp) has a small board and can be placed inside the gamepad.
 
 ![](https://user-images.githubusercontent.com/9499881/60759864-dc89a180-a03c-11e9-8bf4-d0b84894c0e1.png)
 
