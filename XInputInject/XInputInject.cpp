@@ -3,6 +3,7 @@
 #include <math.h>
 #include <atlstr.h> 
 #include "MinHook.h"
+#include <iostream>
 
 #if defined _M_X64
 #pragma comment(lib, "libMinHook-x64-v141-md.lib")
@@ -54,8 +55,10 @@ HANDLE hSerial;
 float ArduinoData[4] = { 0, 0, 0, 0 }; //Mode, Yaw, Pitch, Roll
 float LastArduinoData[4] = { 0, 0, 0, 0 };
 float YRPOffset[3] = { 0, 0, 0 };
+float DeltaYRP[3] = { 0, 0, 0 };
+float LastYRP[3] = { 0, 0, 0 };
 BYTE GameMode = 0;
-DWORD WheelAngle, SensX, SensY, TriggerSens, OnlyTrigger;
+DWORD WheelAngle, SensX, SensY, TriggerSens, OnlyTrigger; //, JoyMouse;
 float accumulatedX = 0, accumulatedY = 0;
 DWORD WorkStatus = 0;
 
@@ -81,7 +84,7 @@ void ArduinoRead()
 	while (ArduinoWork) {
 		ReadFile(hSerial, &ArduinoData, sizeof(ArduinoData), &bytesRead, 0);
 
-		//Filter incorrect values
+		// Filter incorrect values
 		if (CorrectAngleValue(ArduinoData[1]) == false || CorrectAngleValue(ArduinoData[2]) == false || CorrectAngleValue(ArduinoData[3]) == false)
 		{
 			//Last correct values
@@ -93,7 +96,7 @@ void ArduinoRead()
 			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 		}
 
-		//Save last correct values
+		// Save last correct values
 		if (CorrectAngleValue(ArduinoData[1]) && CorrectAngleValue(ArduinoData[2]) && CorrectAngleValue(ArduinoData[3]))
 		{
 			LastArduinoData[0] = ArduinoData[0];
@@ -122,7 +125,7 @@ void ArduinoRead()
 			Centering();
 		}
 		
-		if (bytesRead == 0) Sleep(1); //Don't overload CPU
+		if (bytesRead == 0) Sleep(1); // Don't overload CPU
 	}
 }
 
@@ -150,6 +153,7 @@ void ArduinoStart()
 		key.QueryDWORDValue(_T("TriggerSens"), TriggerSens);
 		TriggerSens = TriggerSens / 10.0f;
 		key.QueryDWORDValue(_T("OnlyTrigger"), OnlyTrigger);
+		//key.QueryDWORDValue(_T("JoyMouse"), JoyMouse);
 	}
 	key.Close();
 
@@ -217,7 +221,7 @@ double OffsetYPR(float f, float f2)
 	return f;
 }
 
-//Implementation from https://github.com/JibbSmart/JoyShockMapper/blob/master/JoyShockMapper/src/win32/InputHelpers.cpp
+// Implementation from https://github.com/JibbSmart/JoyShockMapper/blob/master/JoyShockMapper/src/win32/InputHelpers.cpp
 void MoveMouse(float x, float y) {
 	accumulatedX += x;
 	accumulatedY += y;
@@ -246,51 +250,36 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 		ArduinoStart();
 	}
 
-	//ZeroMemory(pState, sizeof(XINPUT_STATE));
+	// ZeroMemory(pState, sizeof(XINPUT_STATE));
 
 	// first call the original function
 	DWORD toReturn = hookedXInputGetState(dwUserIndex, pState);
 
-	//Crysis 2 reads the state incorrectly, so there is a separate library for it.
+	// Crysis 2 reads the state incorrectly, so there is a separate library for it.
 
 	if (toReturn == ERROR_SUCCESS && ArduinoWork)
-		switch (GameMode)
-		{
-			case 1: //Wheel 
-			{
+		if (GameMode == 1)
 				pState->Gamepad.sThumbLX = ToLeftStick(OffsetYPR(ArduinoData[1], YRPOffset[0])) * -1;
-				break;
-			}
-			case 2:	//FPS
-			{
-				float NewX = OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1;
-				float NewY = OffsetYPR(ArduinoData[3], YRPOffset[2]);
+		
+		else if (GameMode == 2) {
+				DeltaYRP[0] = OffsetYPR(ArduinoData[1], LastYRP[0]) * -1;
+				//DeltaYRP[1] = OffsetYPR(ArduinoData[2], LastYRP[1]);
+				DeltaYRP[2] = OffsetYPR(ArduinoData[3], LastYRP[2]);
 
 				if (pState->Gamepad.bLeftTrigger == 0) {
 					if (OnlyTrigger == false)
-						MoveMouse(NewX * SensX, NewY * SensY);
-				} else
-					MoveMouse(NewX * SensX * TriggerSens, NewY * SensY * TriggerSens);
+						MoveMouse(DeltaYRP[0] * SensX, DeltaYRP[2] * SensY);
+				}
+				else
+					MoveMouse(DeltaYRP[0] * SensX * TriggerSens, DeltaYRP[2] * SensY * TriggerSens);
 
-				Centering();
+				LastYRP[0] = ArduinoData[1];
+				//LastYRP[1] = ArduinoData[2];
+				LastYRP[2] = ArduinoData[3];
 
-				break;
-			}
-			case 3:	//Fully emulation, experimental
-			{
-				pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750);
-				pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750);
-
-				Centering();
-
-				break;
-			}
-			/*case 4:	//FPS, gyroscope offset, experimental
-			{
-				pState->Gamepad.sThumbRX = ThumbFix(myPState.Gamepad.sThumbRX + OffsetYPR(ArduinoData[1], YRPOffset[0]) * -182 * StickSensX); //StickSensX - 9
-				pState->Gamepad.sThumbRY = ThumbFix(myPState.Gamepad.sThumbRY + OffsetYPR(ArduinoData[3], YRPOffset[2]) * -182 * StickSensY); //StickSensX - 7
-			}*/
-
+				//pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750 + pState->Gamepad.sThumbRX);
+				//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750 + pState->Gamepad.sThumbRY);
+				//Centering();
 		}
 
 	return toReturn;

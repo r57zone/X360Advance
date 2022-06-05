@@ -1,15 +1,20 @@
 #include <windows.h>
 #include <cmath>
 #include <algorithm>
+#include "XInput.h"
 #include "IniReader\IniReader.h"
+#pragma comment(lib, "XInput.lib")
 
 float SensX, SensY;
 float ArduinoData[4] = { 0, 0, 0, 0 }; // Mode, Yaw, Pitch, Roll
 float LastArduinoData[4] = { 0, 0, 0, 0 };
 float YRPOffset[3] = { 0, 0, 0 };
+float DeltaYRP[3] = { 0, 0, 0 };
+float LastYRP[3] = { 0, 0, 0 };
 float accumulatedX = 0, accumulatedY = 0;
 int GameMode = 2;
 bool ArduinoWork = false;
+XINPUT_STATE pState;
 
 double OffsetYPR(double f, double f2)
 {
@@ -36,8 +41,8 @@ bool CorrectAngleValue(float Value)
 	}
 }
 
-//Implementation from https://github.com/JibbSmart/JoyShockMapper/blob/master/JoyShockMapper/src/win32/InputHelpers.cpp
-void MouseMove(float x, float y) {
+// Implementation from https://github.com/JibbSmart/JoyShockMapper/blob/master/JoyShockMapper/src/win32/InputHelpers.cpp
+void MoveMouse(float x, float y) {
 	accumulatedX += x;
 	accumulatedY += y;
 
@@ -64,6 +69,7 @@ int main()
 	CIniReader IniFile("X360Advance.ini");
 	SensX = IniFile.ReadFloat("Main", "SensX", 35);
 	SensY = IniFile.ReadFloat("Main", "SensY", 30);
+	bool OnlyTrigger = IniFile.ReadBoolean("Main", "OnlyTrigger", false);
 	HANDLE hSerial;
 
 	char sPortName[8];
@@ -111,7 +117,7 @@ int main()
 
 		ReadFile(hSerial, &ArduinoData, sizeof(ArduinoData), &bytesRead, 0);
 
-		//Filter incorrect values
+		// Filter incorrect values
 		if (CorrectAngleValue(ArduinoData[1]) == false || CorrectAngleValue(ArduinoData[2]) == false || CorrectAngleValue(ArduinoData[3]) == false)
 		{
 			//Last correct values
@@ -123,7 +129,7 @@ int main()
 			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 		}
 
-		//Save last correct values
+		// Save last correct values
 		if (CorrectAngleValue(ArduinoData[1]) && CorrectAngleValue(ArduinoData[2]) && CorrectAngleValue(ArduinoData[3]))
 		{
 			LastArduinoData[0] = ArduinoData[0];
@@ -148,13 +154,20 @@ int main()
 		}
 
 		if (GameMode == 2) {
-			float NewX = OffsetYPR(ArduinoData[1], YRPOffset[0]) * -1;
-			float NewY = OffsetYPR(ArduinoData[3], YRPOffset[2]);
+			DeltaYRP[0] = OffsetYPR(ArduinoData[1], LastYRP[0]) * -1;
+			DeltaYRP[2] = OffsetYPR(ArduinoData[3], LastYRP[2]);
 
-			MouseMove(NewX * SensX, NewY * SensY);
+			XInputGetState(0, &pState);
 
-			YRPOffset[0] = LastArduinoData[1];
-			YRPOffset[2] = LastArduinoData[3];
+			if (pState.Gamepad.bLeftTrigger == 0) {
+				if (OnlyTrigger == false)
+					MoveMouse(DeltaYRP[0] * SensX, DeltaYRP[2] * SensY);
+			}
+			else
+				MoveMouse(DeltaYRP[0] * SensX, DeltaYRP[2] * SensY);
+
+			LastYRP[0] = ArduinoData[1];
+			LastYRP[2] = ArduinoData[3];
 		}
 
 		if ((GetAsyncKeyState(VK_NUMPAD5) & 0x8000) != 0) {
@@ -206,6 +219,8 @@ int main()
 			}
 
 		}
+
+		if (bytesRead == 0) Sleep(1); // Don't overload CPU
 	}
 	
 	CloseHandle(hSerial);
