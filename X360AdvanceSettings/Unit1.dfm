@@ -4,7 +4,7 @@ object Main: TMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'X360Advance - Settings'
-  ClientHeight = 249
+  ClientHeight = 273
   ClientWidth = 384
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -19,7 +19,7 @@ object Main: TMain
   TextHeight = 13
   object ApplyBtn: TButton
     Left = 8
-    Top = 216
+    Top = 240
     Width = 75
     Height = 25
     Caption = 'Apply'
@@ -28,20 +28,20 @@ object Main: TMain
   end
   object CloseBtn: TButton
     Left = 88
-    Top = 216
+    Top = 240
     Width = 75
     Height = 25
     Caption = 'Close'
-    TabOrder = 1
+    TabOrder = 5
     OnClick = CloseBtnClick
   end
   object MouseGB: TGroupBox
     Left = 192
     Top = 8
     Width = 185
-    Height = 201
+    Height = 225
     Caption = 'Mouse'
-    TabOrder = 2
+    TabOrder = 4
     object XAxisSensitivityLbl: TLabel
       Left = 8
       Top = 48
@@ -93,7 +93,7 @@ object Main: TMain
       Min = 1
       Frequency = 10
       Position = 30
-      TabOrder = 0
+      TabOrder = 1
       OnChange = XAxisSensitivityTBChange
     end
     object YAxisSensitivityTB: TTrackBar
@@ -105,7 +105,7 @@ object Main: TMain
       Min = 1
       Frequency = 10
       Position = 25
-      TabOrder = 1
+      TabOrder = 2
       OnChange = YAxisSensitivityTBChange
     end
     object CBOnlyTrigger: TCheckBox
@@ -114,7 +114,7 @@ object Main: TMain
       Width = 169
       Height = 17
       Caption = 'Activate by left trigger'
-      TabOrder = 2
+      TabOrder = 0
     end
     object TriggerSensitivityTB: TTrackBar
       Left = 8
@@ -130,14 +130,23 @@ object Main: TMain
       TabOrder = 3
       OnChange = TriggerSensitivityTBChange
     end
+    object JoyMouseCB: TCheckBox
+      Left = 8
+      Top = 200
+      Width = 169
+      Height = 17
+      Caption = 'Joystick-mouse aiming'
+      TabOrder = 4
+      Visible = False
+    end
   end
   object SteeringWheelGB: TGroupBox
     Left = 8
-    Top = 112
+    Top = 80
     Width = 177
-    Height = 97
+    Height = 81
     Caption = 'Steering wheel'
-    TabOrder = 3
+    TabOrder = 2
     object SensitivityAngleLbl: TLabel
       Left = 8
       Top = 20
@@ -146,19 +155,19 @@ object Main: TMain
       Caption = 'Sensitivity angle'
     end
     object SensitivityAngleValueLbl: TLabel
-      Left = 157
+      Left = 150
       Top = 44
       Width = 6
       Height = 13
       Caption = '0'
     end
     object SensitivityAngleTB: TTrackBar
-      Left = 8
+      Left = 2
       Top = 40
-      Width = 150
+      Width = 148
       Height = 33
-      Max = 180
-      Min = 30
+      Max = 360
+      Min = 60
       Frequency = 10
       Position = 75
       TabOrder = 0
@@ -169,19 +178,19 @@ object Main: TMain
     Left = 8
     Top = 8
     Width = 177
-    Height = 97
+    Height = 65
     Caption = 'Setup'
-    TabOrder = 4
+    TabOrder = 1
     object COMPortLbl: TLabel
       Left = 8
-      Top = 20
+      Top = 17
       Width = 86
       Height = 13
       Caption = 'COM port number:'
     end
     object COMPortNumberEdt: TEdit
-      Left = 9
-      Top = 44
+      Left = 8
+      Top = 35
       Width = 49
       Height = 21
       TabOrder = 0
@@ -190,12 +199,35 @@ object Main: TMain
   end
   object AboutBtn: TButton
     Left = 349
-    Top = 216
+    Top = 240
     Width = 27
     Height = 25
     Caption = '?'
-    TabOrder = 5
+    TabOrder = 6
     OnClick = AboutBtnClick
+  end
+  object ExternalPedalsGB: TGroupBox
+    Left = 8
+    Top = 168
+    Width = 177
+    Height = 65
+    Caption = 'External pedals'
+    TabOrder = 3
+    object ExternalPedalsCOMPortLbl: TLabel
+      Left = 8
+      Top = 18
+      Width = 86
+      Height = 13
+      Caption = 'COM port number:'
+    end
+    object ExternalPedalsCOMPortNumberEdt: TEdit
+      Left = 8
+      Top = 36
+      Width = 57
+      Height = 21
+      TabOrder = 0
+      Text = '3'
+    end
   end
   object XPManifest1: TXPManifest
     Left = 152

@@ -4,6 +4,8 @@
 #include <atlstr.h> 
 #include "MinHook.h"
 #include <iostream>
+#include <algorithm>
+
 
 #if defined _M_X64
 #pragma comment(lib, "libMinHook-x64-v141-md.lib")
@@ -49,7 +51,7 @@ inline MH_STATUS MH_CreateHookApiEx(LPCWSTR pszModule, LPCSTR pszProcName, LPVOI
 	return MH_CreateHookApi(pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
 }
 
-bool ArduinoInit = false, ArduinoWork = false;
+bool ArduinoInit = false, ArduinosWork = false, ArduinoWork1 = false, ArduinoWork2 = false;
 std::thread *pArduinothread = NULL;
 HANDLE hSerial;
 float ArduinoData[4] = { 0, 0, 0, 0 }; //Mode, Yaw, Pitch, Roll
@@ -58,9 +60,14 @@ float YRPOffset[3] = { 0, 0, 0 };
 float DeltaYRP[3] = { 0, 0, 0 };
 float LastYRP[3] = { 0, 0, 0 };
 BYTE GameMode = 0;
-DWORD WheelAngle, SensX, SensY, TriggerSens, OnlyTrigger; //, JoyMouse;
+DWORD WheelAngle, SensX, SensY, TriggerSens, OnlyTrigger;//, JoyMouse = false;
 float accumulatedX = 0, accumulatedY = 0;
 DWORD WorkStatus = 0;
+
+std::thread *pArduinothread2 = NULL;
+bool ExternalPedalsConnected = false;
+HANDLE hSerial2;
+float PedalsValues[2];
 
 void Centering()
 {
@@ -81,7 +88,7 @@ void ArduinoRead()
 {
 	DWORD bytesRead;
 
-	while (ArduinoWork) {
+	while (ArduinoWork1) {
 		ReadFile(hSerial, &ArduinoData, sizeof(ArduinoData), &bytesRead, 0);
 
 		// Filter incorrect values
@@ -124,7 +131,26 @@ void ArduinoRead()
 			PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 			Centering();
 		}
-		
+
+		if (bytesRead == 0) Sleep(1); // Don't overload CPU
+	}
+}
+
+void ArduinoRead2()
+{
+	DWORD bytesRead;
+
+	while (ArduinoWork2) {
+		ReadFile(hSerial2, &PedalsValues, sizeof(PedalsValues), &bytesRead, 0);
+
+		if (PedalsValues[0] > 1.0 || PedalsValues[0] < 0 || PedalsValues[1] > 1.0 || PedalsValues[1] < 0)
+		{
+			PedalsValues[0] = 0;
+			PedalsValues[1] = 0;
+
+			PurgeComm(hSerial2, PURGE_TXCLEAR | PURGE_RXCLEAR);
+		}
+
 		if (bytesRead == 0) Sleep(1); // Don't overload CPU
 	}
 }
@@ -140,6 +166,7 @@ void ArduinoStart()
 
 	CRegKey key;
 	DWORD PortNumber = 0;
+	DWORD ExternalPedalsPortNumber = 0;
 
 	LONG status = key.Open(HKEY_CURRENT_USER, _T("Software\\r57zone\\X360Advance"));
 	if (status == ERROR_SUCCESS)
@@ -154,6 +181,8 @@ void ArduinoStart()
 		TriggerSens = TriggerSens / 10.0f;
 		key.QueryDWORDValue(_T("OnlyTrigger"), OnlyTrigger);
 		//key.QueryDWORDValue(_T("JoyMouse"), JoyMouse);
+
+		key.QueryDWORDValue(_T("ExternalPedalsPort"), ExternalPedalsPortNumber);
 	}
 	key.Close();
 
@@ -177,17 +206,43 @@ void ArduinoStart()
 			if (SetCommState(hSerial, &dcbSerialParams))
 			{
 				WorkStatus++;
-				if (WorkStatus == 3)
-					PlaySound(HardwareInsertWav, NULL, SND_ASYNC); //Alarm04.wav
-				ArduinoWork = true;
+				ArduinoWork1 = true;
 				PurgeComm(hSerial, PURGE_TXCLEAR | PURGE_RXCLEAR);
 				pArduinothread = new std::thread(ArduinoRead);
 			}
 		}
 	}
 
+	char sPortName2[32];
+	sprintf_s(sPortName2, "\\\\.\\COM%d", ExternalPedalsPortNumber);
+	hSerial2 = ::CreateFile(sPortName2, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+	if (hSerial2 != INVALID_HANDLE_VALUE && GetLastError() != ERROR_FILE_NOT_FOUND) {
+
+		DCB dcbSerialParams = { 0 };
+		dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+
+		if (GetCommState(hSerial2, &dcbSerialParams))
+		{
+			dcbSerialParams.BaudRate = CBR_115200;
+			dcbSerialParams.ByteSize = 8;
+			dcbSerialParams.StopBits = ONESTOPBIT;
+			dcbSerialParams.Parity = NOPARITY;
+
+			if (SetCommState(hSerial2, &dcbSerialParams))
+			{
+				WorkStatus++;
+				ArduinoWork2 = true;
+				PurgeComm(hSerial2, PURGE_TXCLEAR | PURGE_RXCLEAR);
+				pArduinothread2 = new std::thread(ArduinoRead2);
+			}
+		}
+	}
+
 	if (WorkStatus < 3)
 		PlaySound(HardwareFailWav, NULL, SND_ASYNC);
+	else if (WorkStatus >= 3)
+		PlaySound(HardwareInsertWav, NULL, SND_ASYNC); //Alarm04.wav
 }
 
 SHORT ToLeftStick(double Value)
@@ -210,15 +265,14 @@ SHORT ThumbFix(double Value)
 	return MyValue;
 }
 
-double OffsetYPR(float f, float f2)
+double OffsetYPR(float Angle1, float Angle2)
 {
-	f -= f2;
-	if (f < -180)
-		f += 360;
-	else if (f > 180)
-		f -= 360;
-
-	return f;
+	Angle1 -= Angle2;
+	if (Angle1 < -180)
+		Angle1 += 360;
+	else if (Angle1 > 180)
+		Angle1 -= 360;
+	return Angle1;
 }
 
 // Implementation from https://github.com/JibbSmart/JoyShockMapper/blob/master/JoyShockMapper/src/win32/InputHelpers.cpp
@@ -257,7 +311,7 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 
 	// Crysis 2 reads the state incorrectly, so there is a separate library for it.
 
-	if (toReturn == ERROR_SUCCESS && ArduinoWork)
+	if (toReturn == ERROR_SUCCESS && ArduinoWork1)
 		if (GameMode == 1)
 				pState->Gamepad.sThumbLX = ToLeftStick(OffsetYPR(ArduinoData[1], YRPOffset[0])) * -1;
 		
@@ -268,10 +322,32 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 
 				if (pState->Gamepad.bLeftTrigger == 0) {
 					if (OnlyTrigger == false)
-						MoveMouse(DeltaYRP[0] * SensX, DeltaYRP[2] * SensY);
-				}
-				else
-					MoveMouse(DeltaYRP[0] * SensX * TriggerSens, DeltaYRP[2] * SensY * TriggerSens);
+						//if (JoyMouse == false)
+							MoveMouse(DeltaYRP[0] * SensX, DeltaYRP[2] * SensY);
+						//else {
+							//pState->Gamepad.sThumbRX = std::clamp((int)(ClampFloat(RadToDeg(DeltaYRP[0]) * SensX, -1, 1) * 32767 + pState->Gamepad.sThumbRX), -32767, 32767);
+							//pState->Gamepad.sThumbRY = std::clamp((int)(ClampFloat(-(RadToDeg(DeltaYRP[2])) * SensY, -1, 1) * 32767 + pState->Gamepad.sThumbRY), -32767, 32767);
+							//pState->Gamepad.sThumbRX = std::clamp((int)(DeltaYRP[0] * SensX * 32767), -32767, 32767);
+							//pState->Gamepad.sThumbRY = std::clamp((int)(-DeltaYRP[2] * SensY * 32767), -32767, 32767);
+							
+							//pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750 + pState->Gamepad.sThumbRX);		
+							//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750 + pState->Gamepad.sThumbRY);
+
+							//ArduinoData[1] = YRPOffset[0];
+							//ArduinoData[3] = YRPOffset[2];
+							//Centering();
+						//}
+
+				} else
+					//if (JoyMouse == false)
+						MoveMouse(DeltaYRP[0] * SensX * TriggerSens, DeltaYRP[2] * SensY * TriggerSens);
+					//else {
+						//pState->Gamepad.sThumbRX = std::clamp((int)(ClampFloat(DeltaYRP[0] * SensX * TriggerSens, -1, 1) * 32767 + pState->Gamepad.sThumbRX), -32767, 32767);
+						//pState->Gamepad.sThumbRY = std::clamp((int)(ClampFloat(-(DeltaYRP[2]) * SensY * TriggerSens, -1, 1) * 32767 + pState->Gamepad.sThumbRY), -32767, 32767);
+						//Centering();
+					//}
+
+
 
 				LastYRP[0] = ArduinoData[1];
 				//LastYRP[1] = ArduinoData[2];
@@ -281,6 +357,13 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 				//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750 + pState->Gamepad.sThumbRY);
 				//Centering();
 		}
+
+	if (toReturn == ERROR_SUCCESS && ArduinoWork2) {
+		if (pState->Gamepad.bLeftTrigger == 0)
+			pState->Gamepad.bLeftTrigger = PedalsValues[0] * 255;
+		if (pState->Gamepad.bRightTrigger == 0)
+			pState->Gamepad.bRightTrigger = PedalsValues[1] * 255;
+	}
 
 	return toReturn;
 }
@@ -341,16 +424,26 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 		case DLL_PROCESS_DETACH:
 		{
-			if (ArduinoWork) {
-				ArduinoWork = false;
+			if (ArduinoWork1) {
+				ArduinoWork1 = false;
 				if (pArduinothread)
 				{
 					pArduinothread->join();
 					delete pArduinothread;
 					pArduinothread = nullptr;
 				}
+				CloseHandle(hSerial);
 			}
-			CloseHandle(hSerial);
+			if (ArduinoWork2) {
+				ArduinoWork2 = false;
+				if (pArduinothread2)
+				{
+					pArduinothread2->join();
+					delete pArduinothread2;
+					pArduinothread2 = nullptr;
+				}
+				CloseHandle(hSerial2);
+			}
 			MH_DisableHook(&detourXInputGetState);
 			MH_Uninitialize();
 			break;

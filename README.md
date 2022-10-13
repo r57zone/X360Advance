@@ -1,7 +1,9 @@
 [![EN](https://user-images.githubusercontent.com/9499881/33184537-7be87e86-d096-11e7-89bb-f3286f752bc6.png)](https://github.com/r57zone/X360Advance/) 
 [![RU](https://user-images.githubusercontent.com/9499881/27683795-5b0fbac6-5cd8-11e7-929c-057833e01fb1.png)](https://github.com/r57zone/X360Advance/blob/master/README.RU.md)
+&#8211; Other languages / Другие языки
+
 # X360Advance 
-External Arduino gyroscope for any XInput compatible gamepads. With it, you can more accurately aim and steer. Buttons allow you to switch modes directly during the game.
+External Arduino gyroscope for any XInput compatible gamepads. With it, you can more accurately aim and steer. Buttons allow you to switch modes directly during the game. [External pedals are supported](https://github.com/r57zone/XboxExternalPedals), you can use them even without a gyroscope.
 
 [![YouTube-X360Advance](https://user-images.githubusercontent.com/9499881/52436336-77815c80-2b2d-11e9-8d56-4ff82d82f48c.gif)](https://youtu.be/lNH2shRDchw)
 [![YouTube-X360Advance](https://user-images.githubusercontent.com/9499881/52436371-91bb3a80-2b2d-11e9-8bd1-3399e4026962.gif)](https://youtu.be/lNH2shRDchw)
@@ -62,6 +64,11 @@ Firmware and libraries can be found at the link below.
 
 ## Possible problems
 Some games are incompatible with this method, since they are not designed to use a mouse and a gamepad at the same time. Some games can constantly change button icons (from keyboard to gamepad and vice versa).
+
+## Credits
+* [MinHook](https://github.com/TsudaKageyu/minhook) for the Windows hook library.
+* [Injector by @Nefarius](https://github.com/nefarius/Injector) for a handy DLL injector.
+* [Injectable Generic Camera System by Frans Bouma](https://github.com/ghostinthecamera/IGCS-GITC) for examples of using MinHook to spoof XInput data.
 
 ## Download
 >Version for Windows 7, 8.1, 10.

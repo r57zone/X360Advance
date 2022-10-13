@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, PSAPI, TlHelp32, ShellApi, ExtCtrls, ComCtrls, XPMan,
+  Dialogs, StdCtrls, PSAPI, TlHelp32, ShellAPI, ExtCtrls, ComCtrls, XPMan,
   ImgList, Menus, IniFiles;
 
 type
@@ -55,7 +55,7 @@ type
 
 var
   Main: TMain;
-  WM_TaskBarCreated: Cardinal;
+  WM_TASKBARCREATED: Cardinal;
   RunOnce: boolean;
   HideProcessList: TStringList;
 
@@ -141,7 +141,7 @@ begin
   for i:=0 to Main.SelectLibCB.Items.Count - 1 do
     if Main.SelectLibCB.Items.Strings[i] = SelectName then begin
       Main.SelectLibCB.ItemIndex:=i;
-      Main.SettingsBtn.Enabled:=FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + Main.SelectLibCB.Items.Strings[Main.SelectLibCB.ItemIndex] + '\Settings.exe');
+      Main.SettingsBtn.Enabled:=FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + Main.SelectLibCB.Items.Strings[Main.SelectLibCB.ItemIndex] + '\Settings.exe') or FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + Main.SelectLibCB.Items.Strings[Main.SelectLibCB.ItemIndex] + '\ReadMe.txt');
     end;
 end;
 
@@ -246,7 +246,7 @@ begin
   HideProcessList.Text:=AnsiLowerCase(HideProcessList.Text);
 
   Application.Title:=Caption;
-  WM_TaskBarCreated:=RegisterWindowMessage('TaskbarCreated');
+  WM_TASKBARCREATED:=RegisterWindowMessage('TaskbarCreated');
   Tray(1);
   SetWindowLong(Application.Handle, GWL_EXSTYLE, GetWindowLong(Application.Handle, GWL_EXSTYLE) or WS_EX_TOOLWINDOW);
   Height:=ListView.Height + RefreshBtn.Height + 30;
@@ -302,8 +302,8 @@ end;
 
 procedure TMain.AboutBtnClick(Sender: TObject);
 begin
-  Application.MessageBox(PChar(Caption + ' 0.3' + #13#10 +
-  IDS_LAST_UPDATE + ' 18.01.2021' + #13#10 +
+  Application.MessageBox(PChar(Caption + ' 0.4' + #13#10 +
+  IDS_LAST_UPDATE + ' 14.10.2022' + #13#10 +
   'https://r57zone.github.io' + #13#10 +
   'r57zone@gmail.com'), PChar(AboutBtn.Caption), MB_ICONINFORMATION);
 end;
@@ -378,9 +378,9 @@ begin
     if GetBinaryType(PAnsiChar(Item.SubItems[2]), BinTypeProcess) then
       case BinTypeProcess of
         //32-bit
-        0: ProcessStatus:=RunProcess(UtilitiesFolder + '\Injector.exe -n ' + Item.SubItems[0] + ' -i ' + '..\' + LibrariesFolder + '\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\XInputInject.dll');
+        0: ProcessStatus:=RunProcess(UtilitiesFolder + '\Injector.exe -n ' + Item.SubItems[0] + ' -i ' + '..\' + LibrariesFolder + '\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\InjectDll.dll');
         //64-bit
-        6: ProcessStatus:=RunProcess(UtilitiesFolder + '\Injector64.exe -n ' + Item.SubItems[0] + ' -i ' + '..\' + LibrariesFolder + '\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\XInputInject64.dll');
+        6: ProcessStatus:=RunProcess(UtilitiesFolder + '\Injector64.exe -n ' + Item.SubItems[0] + ' -i ' + '..\' + LibrariesFolder + '\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\InjectDll64.dll');
       end;
     if ProcessStatus = 1 then
       MessageBox(0, PChar(IDS_FAIL_INJECTION), PChar(Caption), MB_ICONWARNING);
@@ -393,7 +393,7 @@ var
   Ini: TIniFile;
 begin
   if SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] <> '' then begin
-    SettingsBtn.Enabled:=FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe');
+    SettingsBtn.Enabled:=FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe')  or FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + Main.SelectLibCB.Items.Strings[Main.SelectLibCB.ItemIndex] + '\ReadMe.txt');
     Ini:=TIniFile.Create(ExtractFilePath(ParamStr(0)) + 'Setup.ini');
     Ini.WriteString('Main', 'CurrentLibrary', SelectLibCB.Items.Strings[SelectLibCB.ItemIndex]);
     Ini.Free;
@@ -403,7 +403,9 @@ end;
 procedure TMain.SettingsBtnClick(Sender: TObject);
 begin
   if FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe') then
-    WinExec(PChar(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe'), SW_SHOW);
+    ShellExecute(handle, 'open', PChar(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\Settings.exe'), nil, nil, SW_SHOWNORMAL)
+  else if FileExists(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\ReadMe.txt') then
+    ShellExecute(handle, 'open', PChar(ExtractFilePath(ParamStr(0)) + 'Libraries\' + SelectLibCB.Items.Strings[SelectLibCB.ItemIndex] + '\ReadMe.txt'), nil, nil, SW_SHOWNORMAL);
 end;
 
 end.

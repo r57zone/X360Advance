@@ -1,7 +1,8 @@
 ﻿[![EN](https://user-images.githubusercontent.com/9499881/33184537-7be87e86-d096-11e7-89bb-f3286f752bc6.png)](https://github.com/r57zone/X360Advance/) 
 [![RU](https://user-images.githubusercontent.com/9499881/27683795-5b0fbac6-5cd8-11e7-929c-057833e01fb1.png)](https://github.com/r57zone/X360Advance/blob/master/README.RU.md) 
+
 # X360Advance
-Внешний Arduino гироскоп для любых XInput совместимых геймпадов. С его помощью можно более точно прицеливаться и рулить. Кнопки позволяют переключать режимы прямо во время игры.
+Внешний Arduino гироскоп для любых XInput совместимых геймпадов, с его помощью можно более точно прицеливаться и рулить. Кнопки позволяют переключать режимы прямо во время игры. [Поддерживаются внешние педали](https://github.com/r57zone/XboxExternalPedals), использовать их можно даже без гироскопа.
 
 [![YouTube-X360Advance](https://user-images.githubusercontent.com/9499881/52436336-77815c80-2b2d-11e9-8d56-4ff82d82f48c.gif)](https://youtu.be/lNH2shRDchw)
 [![YouTube-X360Advance](https://user-images.githubusercontent.com/9499881/52436371-91bb3a80-2b2d-11e9-8bd1-3399e4026962.gif)](https://youtu.be/lNH2shRDchw)
@@ -62,6 +63,11 @@
 
 ## Возможные проблемы
 Часть игр несовместимы с данным методом, поскольку не расчитаны на использование мыши и геймпада одновременно. У части игр могут постоянно изменяться значки кнопок (с клавиатура на геймпад и наоборот).
+
+## Благодарности
+* [MinHook](https://github.com/TsudaKageyu/minhook) за библиотеку хуков для Windows.
+* [Injector от @Nefarius](https://github.com/nefarius/Injector) за удобный инжектор DLL-библиотек.
+* [Injectable Generic Camera System от Frans Bouma](https://github.com/ghostinthecamera/IGCS-GITC) за примеры использования MinHook для подмены данных XInput.
 
 ## Загрузка
 >Версия для Windows 7, 8.1, 10.

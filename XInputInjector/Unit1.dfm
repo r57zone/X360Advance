@@ -5,7 +5,7 @@ object Main: TMain
   Height = 266
   AlphaBlend = True
   AlphaBlendValue = 0
-  Caption = 'XInput injector'
+  Caption = 'Injector'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

@@ -30,6 +30,10 @@ type
     TriggerSensitivityLbl: TLabel;
     TriggerSensitivityTB: TTrackBar;
     TriggerSensitivityValueLbl: TLabel;
+    JoyMouseCB: TCheckBox;
+    ExternalPedalsGB: TGroupBox;
+    ExternalPedalsCOMPortLbl: TLabel;
+    ExternalPedalsCOMPortNumberEdt: TEdit;
     procedure ApplyBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure XAxisSensitivityTBChange(Sender: TObject);
@@ -68,14 +72,18 @@ begin
   SetWindowLong(COMPortNumberEdt.Handle, GWL_STYLE, GetWindowLong(COMPortNumberEdt.Handle, GWL_STYLE) or ES_NUMBER);
   Reg:=TRegistry.Create;
   Reg.RootKey:=HKEY_CURRENT_USER;
-  if Reg.OpenKey('\Software\r57zone\X360Advance', false) then begin
-    COMPortNumberEdt.Text:=IntToStr(Reg.ReadInteger('Port'));
-    XAxisSensitivityTB.Position:=Reg.ReadInteger('SensX');
-    YAxisSensitivityTB.Position:=Reg.ReadInteger('SensY');
-    SensitivityAngleTB.Position:=Reg.ReadInteger('WheelAngle');
-    CBOnlyTrigger.Checked:=Reg.ReadBool('OnlyTrigger');
-    TriggerSensitivityTB.Position:=Reg.ReadInteger('TriggerSens');
-  end;
+  if Reg.OpenKey('\Software\r57zone\X360Advance', false) then
+    try
+      COMPortNumberEdt.Text:=IntToStr(Reg.ReadInteger('Port'));
+      XAxisSensitivityTB.Position:=Reg.ReadInteger('SensX');
+      YAxisSensitivityTB.Position:=Reg.ReadInteger('SensY');
+      SensitivityAngleTB.Position:=Reg.ReadInteger('WheelAngle') * 2;
+      CBOnlyTrigger.Checked:=Reg.ReadBool('OnlyTrigger');
+      TriggerSensitivityTB.Position:=Reg.ReadInteger('TriggerSens');
+      JoyMouseCB.Checked:=Reg.ReadBool('JoyMouse');
+      ExternalPedalsCOMPortNumberEdt.Text:=IntToStr(Reg.ReadInteger('ExternalPedalsPort'));
+    except;
+    end;
   Reg.Free;
   XAxisSensitivityValueLbl.Caption:=FloatToStr(XAxisSensitivityTB.Position * 0.1);
   YAxisSensitivityValueLbl.Caption:=FloatToStr(YAxisSensitivityTB.Position * 0.1);
@@ -85,7 +93,7 @@ begin
   if GetLocaleInformation(LOCALE_SENGLANGUAGE) = 'Russian' then begin
     Main.Caption:='X360Advance - Настройка';
     SetupGB.Caption:='Настройка';
-    COMPortLbl.Caption:='Номер COM-порта';
+    COMPortLbl.Caption:='Номер COM-порта:';
     SteeringWheelGB.Caption:='Руль';
     SensitivityAngleLbl.Caption:='Угол чувствительности';
     MouseGB.Caption:='Мышь';
@@ -94,6 +102,9 @@ begin
     YAxisSensitivityLbl.Caption:='Чувствительность оси Y';
     TriggerSensitivityLbl.Caption:='Чувствит. с левым триггером';
     TriggerSensitivityTB.Hint:='Уменьшите чувствительность, чтобы более точно целиться.';
+    JoyMouseCB.Caption:='Прицелив. "джойстик-мышь"';
+    ExternalPedalsGB.Caption:='Внешние педали';
+    ExternalPedalsCOMPortLbl.Caption:=COMPortLbl.Caption;
     ApplyBtn.Caption:='Применить';
     CloseBtn.Caption:='Выйти';
   end;
@@ -109,9 +120,11 @@ begin
     Reg.WriteInteger('Port', StrToInt(COMPortNumberEdt.Text));
     Reg.WriteInteger('SensX', XAxisSensitivityTB.Position);
     Reg.WriteInteger('SensY', YAxisSensitivityTB.Position);
-    Reg.WriteInteger('WheelAngle', SensitivityAngleTB.Position);
+    Reg.WriteInteger('WheelAngle', SensitivityAngleTB.Position div 2);
     Reg.WriteBool('OnlyTrigger', CBOnlyTrigger.Checked);
+    Reg.WriteBool('JoyMouse', JoyMouseCB.Checked);
     Reg.WriteInteger('TriggerSens', TriggerSensitivityTB.Position);
+    Reg.WriteInteger('ExternalPedalsPort', StrToInt(ExternalPedalsCOMPortNumberEdt.Text));
   end;
   Reg.Free;
   Close;
