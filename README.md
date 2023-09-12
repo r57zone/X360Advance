@@ -1,6 +1,6 @@
 [![EN](https://user-images.githubusercontent.com/9499881/33184537-7be87e86-d096-11e7-89bb-f3286f752bc6.png)](https://github.com/r57zone/X360Advance/) 
 [![RU](https://user-images.githubusercontent.com/9499881/27683795-5b0fbac6-5cd8-11e7-929c-057833e01fb1.png)](https://github.com/r57zone/X360Advance/blob/master/README.RU.md)
-&#8211; Other languages / Другие языки
+← Choose language | Выберите язык
 
 # X360Advance 
 External Arduino gyroscope for any XInput compatible gamepads. With it, you can more accurately aim and steer. Buttons allow you to switch modes directly during the game. [External pedals are supported](https://github.com/r57zone/XboxExternalPedals), you can use them even without a gyroscope.
