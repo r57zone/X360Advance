@@ -5,7 +5,7 @@
 #include "MinHook.h"
 #include <iostream>
 #include <algorithm>
-
+#include <mmsystem.h>
 
 #if defined _M_X64
 #pragma comment(lib, "libMinHook-x64-v141-md.lib")
@@ -51,7 +51,8 @@ inline MH_STATUS MH_CreateHookApiEx(LPCWSTR pszModule, LPCSTR pszProcName, LPVOI
 	return MH_CreateHookApi(pszModule, pszProcName, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
 }
 
-bool ArduinoInit = false, ArduinosWork = false, ArduinoWork1 = false, ArduinoWork2 = false;
+// Motion tracker X360Advance
+bool ArduinoInit = false, ArduinosWork = false, ArduinoWork1 = false;
 std::thread *pArduinothread = NULL;
 HANDLE hSerial;
 float ArduinoData[4] = { 0, 0, 0, 0 }; //Mode, Yaw, Pitch, Roll
@@ -60,12 +61,17 @@ float YRPOffset[3] = { 0, 0, 0 };
 float DeltaYRP[3] = { 0, 0, 0 };
 float LastYRP[3] = { 0, 0, 0 };
 BYTE GameMode = 0;
-DWORD WheelAngle, SensX, SensY, TriggerSens, OnlyTrigger;//, JoyMouse = false;
+DWORD WheelAngle, SensX, SensY, TriggerSens, OnlyTrigger;//, JoyMouse = true;
 float accumulatedX = 0, accumulatedY = 0;
 DWORD WorkStatus = 0;
 
+// External pedals
+JOYINFOEX ExternalPedalsJoyInfo;
+JOYCAPS ExternalPedalsJoyCaps;
+int ExternalPedalsJoyIndex = JOYSTICKID1;
 std::thread *pArduinothread2 = NULL;
-bool ExternalPedalsConnected = false;
+bool ExternalPedalsArduinoConnected = false;
+bool ExternalPedalsDInputConnected = false;
 HANDLE hSerial2;
 float PedalsValues[2];
 
@@ -140,7 +146,7 @@ void ArduinoRead2()
 {
 	DWORD bytesRead;
 
-	while (ArduinoWork2) {
+	while (ExternalPedalsArduinoConnected) {
 		ReadFile(hSerial2, &PedalsValues, sizeof(PedalsValues), &bytesRead, 0);
 
 		if (PedalsValues[0] > 1.0 || PedalsValues[0] < 0 || PedalsValues[1] > 1.0 || PedalsValues[1] < 0)
@@ -232,7 +238,7 @@ void ArduinoStart()
 			if (SetCommState(hSerial2, &dcbSerialParams))
 			{
 				WorkStatus++;
-				ArduinoWork2 = true;
+				ExternalPedalsArduinoConnected = true;
 				PurgeComm(hSerial2, PURGE_TXCLEAR | PURGE_RXCLEAR);
 				pArduinothread2 = new std::thread(ArduinoRead2);
 			}
@@ -263,6 +269,16 @@ SHORT ThumbFix(double Value)
 	else if (MyValue < -32767)
 		MyValue = -32767;
 	return MyValue;
+}
+
+double RadToDeg(double Rad)
+{
+	return Rad / 3.14159265358979323846 * 180.0;
+}
+
+double DegToRad(double Deg)
+{
+	return Deg * 3.14159265358979323846 / 180.0;
 }
 
 double OffsetYPR(float Angle1, float Angle2)
@@ -296,12 +312,44 @@ void MoveMouse(float x, float y) {
 	SendInput(1, &input, sizeof(input));
 }
 
+float ClampFloat(float Value, float Min, float Max)
+{
+	if (Value > Max)
+		Value = Max;
+	else if (Value < Min)
+		Value = Min;
+	return Value;
+}
+
+void ExternalPedalsDInputSearch() {
+	if (joyGetPosEx(JOYSTICKID1, &ExternalPedalsJoyInfo) == JOYERR_NOERROR &&
+		joyGetDevCaps(JOYSTICKID1, &ExternalPedalsJoyCaps, sizeof(ExternalPedalsJoyCaps)) == JOYERR_NOERROR &&
+		ExternalPedalsJoyCaps.wNumButtons == 16) { // DualSense - 15, DigiJoy - 16
+		ExternalPedalsJoyIndex = JOYSTICKID1;
+		ExternalPedalsDInputConnected = true;
+	}
+	else if (joyGetPosEx(JOYSTICKID2, &ExternalPedalsJoyInfo) == JOYERR_NOERROR &&
+		joyGetDevCaps(JOYSTICKID2, &ExternalPedalsJoyCaps, sizeof(ExternalPedalsJoyCaps)) == JOYERR_NOERROR &&
+		ExternalPedalsJoyCaps.wNumButtons == 16) {
+		ExternalPedalsJoyIndex = JOYSTICKID2;
+		ExternalPedalsDInputConnected = true;
+	}
+	else
+		ExternalPedalsDInputConnected = false;
+}
+
 //Own GetState
 DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
 	if (ArduinoInit == false) {
 		ArduinoInit = true;
 		ArduinoStart();
+		ExternalPedalsJoyInfo.dwFlags = JOY_RETURNALL;
+		ExternalPedalsJoyInfo.dwSize = sizeof(ExternalPedalsJoyInfo);
+		ExternalPedalsDInputSearch();
+		//AllocConsole();
+		//FILE* fp;
+		//freopen_s(&fp, "CONOUT$", "w", stdout);
 	}
 
 	// ZeroMemory(pState, sizeof(XINPUT_STATE));
@@ -311,7 +359,7 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 
 	// Crysis 2 reads the state incorrectly, so there is a separate library for it.
 
-	if (toReturn == ERROR_SUCCESS && ArduinoWork1)
+	if (toReturn == ERROR_SUCCESS && ArduinoWork1) {
 		if (GameMode == 1)
 				pState->Gamepad.sThumbLX = ToLeftStick(OffsetYPR(ArduinoData[1], YRPOffset[0])) * -1;
 		
@@ -329,13 +377,23 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 							//pState->Gamepad.sThumbRY = std::clamp((int)(ClampFloat(-(RadToDeg(DeltaYRP[2])) * SensY, -1, 1) * 32767 + pState->Gamepad.sThumbRY), -32767, 32767);
 							//pState->Gamepad.sThumbRX = std::clamp((int)(DeltaYRP[0] * SensX * 32767), -32767, 32767);
 							//pState->Gamepad.sThumbRY = std::clamp((int)(-DeltaYRP[2] * SensY * 32767), -32767, 32767);
-							
+
+
 							//pState->Gamepad.sThumbRX = ThumbFix(OffsetYPR(ArduinoData[1], YRPOffset[0]) * -750 + pState->Gamepad.sThumbRX);		
 							//pState->Gamepad.sThumbRY = ThumbFix(OffsetYPR(ArduinoData[3], YRPOffset[2]) * -750 + pState->Gamepad.sThumbRY);
 
-							//ArduinoData[1] = YRPOffset[0];
-							//ArduinoData[3] = YRPOffset[2];
+							
+							// Слишком быстро, не успевает, нужно иначе делать
+							pState->Gamepad.sThumbRX = ThumbFix(-(DegToRad(DeltaYRP[0])) * 20870 * SensX * TriggerSens + pState->Gamepad.sThumbRX); // 20870 = 32767 / 1,57 (половина радианов)
+							pState->Gamepad.sThumbRY = ThumbFix(DegToRad(DeltaYRP[2]) * 20870 * SensY * TriggerSens + pState->Gamepad.sThumbRY);
+							
+							//std::cout << DegToRad(DeltaYRP[0]) * 20870 * SensX << std::endl;
+							//system("cls");
+
 							//Centering();
+						
+							//YRPOffset[0] = ArduinoData[1];
+							//YRPOffset[2] = ArduinoData[3];
 						//}
 
 				} else
@@ -344,7 +402,10 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 					//else {
 						//pState->Gamepad.sThumbRX = std::clamp((int)(ClampFloat(DeltaYRP[0] * SensX * TriggerSens, -1, 1) * 32767 + pState->Gamepad.sThumbRX), -32767, 32767);
 						//pState->Gamepad.sThumbRY = std::clamp((int)(ClampFloat(-(DeltaYRP[2]) * SensY * TriggerSens, -1, 1) * 32767 + pState->Gamepad.sThumbRY), -32767, 32767);
-						//Centering();
+
+						//pState->Gamepad.sThumbRX = ThumbFix(-(DegToRad(DeltaYRP[0])) * 20870 * SensX * TriggerSens + pState->Gamepad.sThumbRX); // 20870 = 32767 / 1,57 (половина радианов)
+						//pState->Gamepad.sThumbRY = ThumbFix(DegToRad(DeltaYRP[2]) * 20870 * SensY * TriggerSens + pState->Gamepad.sThumbRY);
+						
 					//}
 
 
@@ -358,12 +419,23 @@ DWORD WINAPI detourXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 				//Centering();
 		}
 
-	if (toReturn == ERROR_SUCCESS && ArduinoWork2) {
-		if (pState->Gamepad.bLeftTrigger == 0)
-			pState->Gamepad.bLeftTrigger = PedalsValues[0] * 255;
-		if (pState->Gamepad.bRightTrigger == 0)
-			pState->Gamepad.bRightTrigger = PedalsValues[1] * 255;
+		if (ExternalPedalsDInputConnected) {
+			if (joyGetPosEx(ExternalPedalsJoyIndex, &ExternalPedalsJoyInfo) == JOYERR_NOERROR) {
+				if (pState->Gamepad.bLeftTrigger == 0)
+					pState->Gamepad.bLeftTrigger = ExternalPedalsJoyInfo.dwVpos / 256;
+				if(pState->Gamepad.bRightTrigger == 0)
+					pState->Gamepad.bRightTrigger = ExternalPedalsJoyInfo.dwUpos / 256;
+			} else
+				ExternalPedalsDInputConnected = false;
+		} else if (ExternalPedalsArduinoConnected) {
+			if (pState->Gamepad.bLeftTrigger == 0)
+				pState->Gamepad.bLeftTrigger = PedalsValues[0] * 255;
+			if (pState->Gamepad.bRightTrigger == 0)
+				pState->Gamepad.bRightTrigger = PedalsValues[1] * 255;
+		}
 	}
+
+
 
 	return toReturn;
 }
@@ -434,8 +506,8 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 				}
 				CloseHandle(hSerial);
 			}
-			if (ArduinoWork2) {
-				ArduinoWork2 = false;
+			if (ExternalPedalsArduinoConnected) {
+				ExternalPedalsArduinoConnected = false;
 				if (pArduinothread2)
 				{
 					pArduinothread2->join();
